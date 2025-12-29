@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "TravelSignAr",
-    "slug": "travelsignar",
+    "name": "LinguaJourney",
+    "slug": "linguajourney",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "TravelsignAR uses your camera to scan signs and translate them."
+        "NSCameraUsageDescription": "LinguaJourney uses your camera to scan signs and translate them."
       }
     },
     "android": {
@@ -25,7 +25,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.travelsignar.app"
+      "package": "com.linguajourney.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"

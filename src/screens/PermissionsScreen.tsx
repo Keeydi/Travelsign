@@ -23,7 +23,7 @@ export const PermissionsScreen: React.FC<PermissionsScreenProps> = ({ onNavigate
 
       <Text style={styles.title}>Permissions</Text>
       <Text style={styles.description}>
-        TravelsignAR needs camera access to scan signs around you. We only use your camera
+        LinguaJourney needs camera access to scan signs around you. We only use your camera
         while you are actively scanning.
       </Text>
 

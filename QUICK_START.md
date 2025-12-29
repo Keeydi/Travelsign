@@ -1,4 +1,4 @@
-# TravelSignAr - Quick Start Guide
+# LinguaJourney - Quick Start Guide
 
 ## 🚀 Quick Setup (5 Minutes)
 

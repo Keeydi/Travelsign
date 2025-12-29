@@ -1,6 +1,6 @@
-# TravelSignAr - Step-by-Step Setup Guide
+# LinguaJourney - Step-by-Step Setup Guide
 
-Welcome to TravelSignAr! This guide will walk you through setting up and running the entire system step by step.
+Welcome to LinguaJourney! This guide will walk you through setting up and running the entire system step by step.
 
 ## 📋 Table of Contents
 1. [Prerequisites](#prerequisites)
@@ -251,7 +251,7 @@ npm run web
 
 ### Network Connection Types
 
-**Good news:** TravelSignAr works with **any connection type** (LAN cable or WiFi)!
+**Good news:** LinguaJourney works with **any connection type** (LAN cable or WiFi)!
 
 **Requirements:**
 - ✅ Both your computer (server) and phone (client) must be on the **same network**
@@ -341,7 +341,7 @@ Before running the app, make sure:
 ## Project Structure
 
 ```
-TravelsignAr/
+LinguaJourney/
 ├── backend/
 │   ├── server.py          # Flask backend server
 │   └── .env               # Backend environment variables (create this)
@@ -372,11 +372,11 @@ If you encounter issues not covered here:
 
 ## Summary
 
-**To run TravelSignAr:**
+**To run LinguaJourney:**
 
 1. **Backend:** `cd backend && python server.py`
 2. **Frontend:** `npm start` (in project root)
 3. **Connect:** Scan QR code with Expo Go app
 
-That's it! Enjoy using TravelSignAr! 🚀
+That's it! Enjoy using LinguaJourney! 🚀
 

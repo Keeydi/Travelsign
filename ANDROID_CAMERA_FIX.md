@@ -55,7 +55,7 @@
    - Look for Android permission dialog
 
 2. **If permission dialog doesn't appear:**
-   - Go to Android Settings → Apps → TravelSignAr → Permissions
+   - Go to Android Settings → Apps → LinguaJourney → Permissions
    - Manually enable Camera permission
    - Return to app and try again
 
@@ -76,7 +76,7 @@ The updated code includes console logs. Check your terminal/console for:
 
 1. **Permission dialog not showing:**
    - App might have been denied previously
-   - Go to Settings → Apps → TravelSignAr → Permissions → Reset
+   - Go to Settings → Apps → LinguaJourney → Permissions → Reset
    - Or uninstall and reinstall the app
 
 2. **Camera view is black:**

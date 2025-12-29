@@ -54,7 +54,7 @@ def reverse_geocode(lat: float, lng: float) -> str:
       "zoom": 12,
       "addressdetails": 1,
     }
-    headers = {"User-Agent": "travelsign-ar/1.0 (student project)"}
+    headers = {"User-Agent": "linguajourney/1.0 (student project)"}
     resp = requests.get(url, params=params, headers=headers, timeout=10)
     resp.raise_for_status()
     data = resp.json()
