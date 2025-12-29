@@ -125,3 +125,4 @@ The updated code includes console logs. Check your terminal/console for:
 - The app now automatically requests permission on screen load
 - Users can manually request permission via the button
 
+

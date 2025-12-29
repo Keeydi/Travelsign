@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { theme } from '../theme';
@@ -14,59 +14,59 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
   const cameraRef = useRef<CameraView | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [hasRequested, setHasRequested] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
 
-  // Request permission immediately when screen loads
+  // Request permission when screen loads
   useEffect(() => {
     const requestCameraPermission = async () => {
       console.log('ScanScreen: Permission state:', {
-        permission,
+        permission: permission ? { 
+          granted: permission.granted, 
+          status: permission.status,
+          canAskAgain: permission.canAskAgain 
+        } : null,
         hasRequested,
         isRequesting,
-        granted: permission?.granted
       });
 
-      // If permission is already granted, no need to request
-      if (permission?.granted) {
-        console.log('ScanScreen: Camera permission already granted');
-        return;
-      }
-
-      // If we haven't requested yet and permission is not granted, request it
+      // Always request permission if we haven't requested yet, even if it appears granted
+      // This is important for Expo Go where permissions might appear granted at app level
+      // but the project still needs to request them explicitly
       if (!hasRequested && !isRequesting) {
         console.log('ScanScreen: Requesting camera permission...');
         setIsRequesting(true);
         setHasRequested(true);
         try {
           const result = await requestPermission();
-          console.log('ScanScreen: Camera permission result:', result);
+          console.log('ScanScreen: Camera permission result:', {
+            granted: result.granted,
+            status: result.status,
+            canAskAgain: result.canAskAgain,
+          });
           if (!result.granted) {
             console.warn('ScanScreen: Camera permission denied');
+          } else {
+            console.log('ScanScreen: Camera permission granted successfully');
+            // Small delay to ensure camera can initialize properly
+            setTimeout(() => {
+              setShowCamera(true);
+              console.log('ScanScreen: Showing camera view');
+            }, 300);
           }
         } catch (error) {
           console.error('ScanScreen: Error requesting camera permission:', error);
-          Alert.alert(
-            'Permission Error',
-            'Failed to request camera permission. Please enable it in your device settings.',
-            [
-              { text: 'OK', style: 'cancel' },
-              {
-                text: 'Open Settings',
-                onPress: async () => {
-                  try {
-                    if (Platform.OS === 'android') {
-                      await Linking.openSettings();
-                    } else {
-                      await Linking.openURL('app-settings:');
-                    }
-                  } catch (err) {
-                    console.error('Error opening settings:', err);
-                  }
-                }
-              }
-            ]
-          );
         } finally {
           setIsRequesting(false);
+        }
+      } else if (permission?.granted) {
+        console.log('ScanScreen: Camera permission already granted');
+        // If permission was already granted, show camera immediately
+        if (!showCamera) {
+          setTimeout(() => {
+            setShowCamera(true);
+            console.log('ScanScreen: Showing camera view (permission already granted)');
+          }, 100);
         }
       }
     };
@@ -74,72 +74,65 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
     requestCameraPermission();
   }, [permission, hasRequested, isRequesting, requestPermission]);
 
+  // Show camera when permission is granted
+  useEffect(() => {
+    if (permission?.granted && !showCamera && !isRequesting) {
+      // Show camera immediately on Android to avoid black screen issues
+      // The camera will show a loading overlay until ready
+      console.log(`ScanScreen: Permission granted, showing camera immediately (${Platform.OS})`);
+      setShowCamera(true);
+    } else if (!permission?.granted) {
+      setShowCamera(false);
+      setCameraReady(false);
+    }
+  }, [permission?.granted, showCamera, isRequesting]);
+
   // Manual permission request handler
   const handleRequestPermission = async () => {
     setIsRequesting(true);
     try {
       const result = await requestPermission();
-      console.log('Manual camera permission result:', result);
+      console.log('ScanScreen: Manual permission request result:', result);
       if (!result.granted) {
         Alert.alert(
           'Camera Permission Required',
           'Camera access is required to scan signs. Please enable it in your device settings.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Open Settings', 
-              onPress: async () => {
-                try {
-                  if (Platform.OS === 'android') {
-                    await Linking.openSettings();
-                  } else {
-                    await Linking.openURL('app-settings:');
-                  }
-                } catch (error) {
-                  console.error('Error opening settings:', error);
-                }
-              }
-            }
-          ]
+          [{ text: 'OK' }]
         );
       }
     } catch (error) {
-      console.error('Error requesting camera permission:', error);
-      Alert.alert(
-        'Permission Error',
-        'Failed to request camera permission. Please enable it in your device settings.',
-        [
-          { text: 'OK', style: 'cancel' },
-          {
-            text: 'Open Settings',
-            onPress: async () => {
-              try {
-                if (Platform.OS === 'android') {
-                  await Linking.openSettings();
-                } else {
-                  await Linking.openURL('app-settings:');
-                }
-              } catch (err) {
-                console.error('Error opening settings:', err);
-              }
-            }
-          }
-        ]
-      );
+      console.error('ScanScreen: Error requesting camera permission:', error);
+      Alert.alert('Error', 'Failed to request camera permission. Please try again.');
     } finally {
       setIsRequesting(false);
     }
   };
 
   const handleCapturePress = async () => {
-    if (!cameraRef.current || isCapturing) return;
+    console.log('ScanScreen: Capture pressed', {
+      cameraRef: !!cameraRef.current,
+      isCapturing,
+      cameraReady,
+      permissionGranted: permission?.granted,
+    });
+
+    if (!cameraRef.current) {
+      console.error('ScanScreen: Camera ref is null');
+      Alert.alert('Camera Error', 'Camera is not ready. Please wait a moment and try again.');
+      return;
+    }
+
+    if (isCapturing) return;
 
     try {
       setIsCapturing(true);
+      console.log('ScanScreen: Taking picture...');
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
         base64: true,
       } as any);
+
+      console.log('ScanScreen: Picture taken', { hasUri: !!photo?.uri });
 
       if (!photo || !photo.uri) {
         throw new Error('No photo captured');
@@ -150,7 +143,7 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
         previewImageBase64: photo.base64,
       });
     } catch (err) {
-      console.error('Failed to capture image', err);
+      console.error('ScanScreen: Failed to capture image', err);
       Alert.alert('Capture failed', 'Could not take a picture. Please try again.');
     } finally {
       setIsCapturing(false);
@@ -194,16 +187,47 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
           </View>
         ) : (
           <>
-            <View style={styles.cameraContainer}>
-              <CameraView
-                ref={cameraRef}
-                style={StyleSheet.absoluteFill}
-                facing="back"
-              />
-              <View style={styles.overlayFrame}>
-                <View style={styles.overlayCorner} />
-                <Text style={styles.overlayText}>Align the sign inside the frame</Text>
-              </View>
+            <View 
+              style={styles.cameraContainer}
+              onLayout={(e) => {
+                const { width, height } = e.nativeEvent.layout;
+                console.log('ScanScreen: Camera container layout', { width, height, platform: Platform.OS });
+              }}
+            >
+              {permission.granted && showCamera && (
+                <>
+                  <CameraView
+                    key={Platform.OS === 'android' ? `camera-view-android-${showCamera}` : 'camera-view'}
+                    ref={(ref) => {
+                      cameraRef.current = ref;
+                      if (ref) {
+                        console.log('ScanScreen: Camera ref set', { platform: Platform.OS });
+                        // Small delay before marking as ready on Android
+                        if (Platform.OS === 'android') {
+                          setTimeout(() => {
+                            setCameraReady(true);
+                            console.log('ScanScreen: Camera ready on Android');
+                          }, 800);
+                        } else {
+                          setCameraReady(true);
+                        }
+                      }
+                    }}
+                    style={Platform.OS === 'android' ? styles.cameraViewAndroid : StyleSheet.absoluteFill}
+                    facing="back"
+                  />
+                  {!cameraReady && (
+                    <View style={styles.cameraLoadingOverlay}>
+                      <ActivityIndicator size="large" color="#FFFFFF" />
+                      <Text style={styles.cameraLoadingText}>Initializing camera...</Text>
+                    </View>
+                  )}
+                  <View style={styles.overlayFrame} pointerEvents="none">
+                    <View style={styles.overlayCorner} />
+                    <Text style={styles.overlayText}>Align the sign inside the frame</Text>
+                  </View>
+                </>
+              )}
             </View>
 
             <TouchableOpacity
@@ -258,9 +282,33 @@ const styles = StyleSheet.create({
   cameraContainer: {
     flex: 1,
     borderRadius: theme.shapes.cardRadius,
-    overflow: 'hidden',
+    overflow: Platform.OS === 'android' ? 'visible' : 'hidden',
     backgroundColor: '#000',
     marginBottom: theme.spacing.lg,
+    position: 'relative',
+    minHeight: 400,
+  },
+  cameraViewAndroid: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  cameraLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  cameraLoadingText: {
+    marginTop: theme.spacing.md,
+    color: '#FFFFFF',
+    fontFamily: theme.typography.regular,
+    fontSize: 14,
   },
   cameraPlaceholder: {
     flex: 1,
