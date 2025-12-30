@@ -7,6 +7,7 @@ import {
   Image,
   TouchableWithoutFeedback,
   GestureResponderEvent,
+  Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -88,8 +89,11 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
         cropRect,
         location,
       });
-    } catch (err) {
-      console.warn('OCR/translate failed', err);
+    } catch (err: any) {
+      console.error('OCR/translate failed', err);
+      const errorMessage = err?.message || 'Failed to process image. Please try again.';
+      // Show error to user
+      Alert.alert('Translation Error', errorMessage, [{ text: 'OK' }]);
       onNavigate('/translation-result', {
         originalText: '',
         translatedText: '',

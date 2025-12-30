@@ -125,46 +125,83 @@ Example:
 @app.post("/ocr")
 def ocr():
   """Extract text from an image (optionally focusing on a crop rectangle)."""
-  data = request.get_json(force=True, silent=True) or {}
-  image_b64 = data.get("imageBase64", "").strip()
-  crop_rect = data.get("cropRect") or {}
-
-  if not image_b64:
-    return jsonify({"error": "imageBase64 is required"}), 400
-
   try:
-    image_bytes = base64.b64decode(image_b64)
-  except Exception:
-    return jsonify({"error": "invalid base64 image"}), 400
+    data = request.get_json(force=True, silent=True) or {}
+    image_b64 = data.get("imageBase64", "").strip()
+    crop_rect = data.get("cropRect") or {}
 
-  # Build a short hint about the crop rectangle (values are 0–1)
-  hint = ""
-  if all(k in crop_rect for k in ("x", "y", "width", "height")):
-    hint = (
-      "Only read the text inside the rectangle defined by "
-      f"x={crop_rect['x']:.2f}, y={crop_rect['y']:.2f}, "
-      f"width={crop_rect['width']:.2f}, height={crop_rect['height']:.2f} (normalized 0-1). "
+    if not image_b64:
+      return jsonify({"error": "imageBase64 is required"}), 400
+
+    # Strip data URI prefix if present (e.g., "data:image/jpeg;base64,")
+    if "," in image_b64:
+      image_b64 = image_b64.split(",")[-1]
+
+    # Remove any whitespace
+    image_b64 = image_b64.replace(" ", "").replace("\n", "").replace("\r", "")
+
+    try:
+      image_bytes = base64.b64decode(image_b64)
+    except Exception as e:
+      print(f"OCR: Base64 decode error: {e}")
+      return jsonify({"error": f"invalid base64 image: {str(e)}"}), 400
+
+    # Detect image format from magic bytes
+    mime_type = "image/jpeg"  # default
+    if len(image_bytes) >= 4:
+      # Check for PNG
+      if image_bytes[:4] == b'\x89PNG':
+        mime_type = "image/png"
+      # Check for JPEG
+      elif image_bytes[:2] == b'\xff\xd8':
+        mime_type = "image/jpeg"
+      # Check for WebP
+      elif image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP':
+        mime_type = "image/webp"
+      # Check for GIF
+      elif image_bytes[:6] in (b'GIF87a', b'GIF89a'):
+        mime_type = "image/gif"
+
+    # Build a short hint about the crop rectangle (values are 0–1)
+    hint = ""
+    if all(k in crop_rect for k in ("x", "y", "width", "height")):
+      try:
+        hint = (
+          "Only read the text inside the rectangle defined by "
+          f"x={crop_rect['x']:.2f}, y={crop_rect['y']:.2f}, "
+          f"width={crop_rect['width']:.2f}, height={crop_rect['height']:.2f} (normalized 0-1). "
+        )
+      except (ValueError, TypeError) as e:
+        print(f"OCR: Error formatting crop rect: {e}")
+        hint = ""
+
+    prompt = (
+      f"{hint}Return exactly the text you see in that area, preserving line breaks. "
+      "Do not add explanations or translation, only the raw text."
     )
 
-  prompt = (
-    f"{hint}Return exactly the text you see in that area, preserving line breaks. "
-    "Do not add explanations or translation, only the raw text."
-  )
-
-  try:
-    resp = model.generate_content(
-      [
-        {
-          "mime_type": "image/jpeg",
-          "data": image_bytes,
-        },
-        {"text": prompt},
-      ]
-    )
-    text = (resp.text or "").strip()
-    return jsonify({"text": text})
+    try:
+      resp = model.generate_content(
+        [
+          {
+            "mime_type": mime_type,
+            "data": image_bytes,
+          },
+          {"text": prompt},
+        ]
+      )
+      text = (resp.text or "").strip()
+      return jsonify({"text": text})
+    except Exception as e:
+      print(f"OCR: Gemini API error: {e}")
+      import traceback
+      traceback.print_exc()
+      return jsonify({"error": f"OCR processing failed: {str(e)}"}), 500
   except Exception as e:
-    return jsonify({"error": str(e)}), 500
+    print(f"OCR: Unexpected error: {e}")
+    import traceback
+    traceback.print_exc()
+    return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
 
 
 @app.get("/nearby")
