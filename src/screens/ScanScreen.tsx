@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { theme } from '../theme';
@@ -96,8 +96,11 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
       if (!result.granted) {
         Alert.alert(
           'Camera Permission Required',
-          'Camera access is required to scan signs. Please enable it in your device settings.',
-          [{ text: 'OK' }]
+          'Camera access is required to scan signs. You can enable it in your device settings.',
+          [
+            { text: 'OK' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
         );
       }
     } catch (error) {
@@ -183,6 +186,12 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
               <Text style={styles.primaryButtonText}>
                 {isRequesting ? 'Requesting...' : 'Allow camera'}
               </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => Linking.openSettings()}
+            >
+              <Text style={styles.settingsButtonText}>Open Settings</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -363,6 +372,16 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.semibold,
     fontSize: 16,
     color: '#FFFFFF',
+  },
+  settingsButton: {
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  settingsButtonText: {
+    fontFamily: theme.typography.medium,
+    fontSize: 14,
+    color: theme.colors.primary,
   },
 });
 

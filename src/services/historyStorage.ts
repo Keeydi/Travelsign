@@ -1,0 +1,126 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const HISTORY_KEY = '@linguajourney/history';
+const SAVED_KEY = '@linguajourney/saved';
+
+export type HistoryItem = {
+  id: string;
+  originalText: string;
+  translatedText: string;
+  timestamp: number;
+};
+
+function formatRelativeTime(ms: number): string {
+  const now = Date.now();
+  const diff = now - ms;
+  const sec = Math.floor(diff / 1000);
+  const min = Math.floor(sec / 60);
+  const hour = Math.floor(min / 60);
+  const day = Math.floor(hour / 24);
+  if (day > 0) return `${day}d ago`;
+  if (hour > 0) return `${hour}h ago`;
+  if (min > 0) return `${min} min ago`;
+  if (sec > 0) return `${sec} sec ago`;
+  return 'Just now';
+}
+
+export function formatHistoryItemTimestamp(item: HistoryItem): string {
+  return formatRelativeTime(item.timestamp);
+}
+
+// ─── History ─────────────────────────────────────────────────────────────────
+
+export async function getHistory(): Promise<HistoryItem[]> {
+  try {
+    const raw = await AsyncStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const list: HistoryItem[] = JSON.parse(raw);
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addToHistory(
+  originalText: string,
+  translatedText: string
+): Promise<void> {
+  if (!originalText?.trim() && !translatedText?.trim()) return;
+  const list = await getHistory();
+  const item: HistoryItem = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    originalText: originalText?.trim() || '',
+    translatedText: translatedText?.trim() || '',
+    timestamp: Date.now(),
+  };
+  const next = [item, ...list].slice(0, 200);
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+}
+
+export async function removeFromHistory(id: string): Promise<void> {
+  const list = await getHistory();
+  const next = list.filter((i) => i.id !== id);
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+}
+
+export async function clearHistory(): Promise<void> {
+  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify([]));
+}
+
+// ─── Saved ────────────────────────────────────────────────────────────────────
+
+export async function getSaved(): Promise<HistoryItem[]> {
+  try {
+    const raw = await AsyncStorage.getItem(SAVED_KEY);
+    if (!raw) return [];
+    const list: HistoryItem[] = JSON.parse(raw);
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function addToSaved(
+  originalText: string,
+  translatedText: string
+): Promise<HistoryItem | null> {
+  const list = await getSaved();
+  const isDuplicate = list.some(
+    (i) =>
+      i.originalText === (originalText?.trim() || '') &&
+      i.translatedText === (translatedText?.trim() || '')
+  );
+  if (isDuplicate) return null;
+
+  const item: HistoryItem = {
+    id: `saved-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    originalText: originalText?.trim() || '',
+    translatedText: translatedText?.trim() || '',
+    timestamp: Date.now(),
+  };
+  const next = [item, ...list].slice(0, 200);
+  await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(next));
+  return item;
+}
+
+export async function removeFromSaved(id: string): Promise<void> {
+  const list = await getSaved();
+  const next = list.filter((i) => i.id !== id);
+  await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(next));
+}
+
+export async function isSavedItem(
+  originalText: string,
+  translatedText: string
+): Promise<boolean> {
+  const list = await getSaved();
+  return list.some(
+    (i) =>
+      i.originalText === (originalText?.trim() || '') &&
+      i.translatedText === (translatedText?.trim() || '')
+  );
+}
+
+export async function clearSaved(): Promise<void> {
+  await AsyncStorage.setItem(SAVED_KEY, JSON.stringify([]));
+}

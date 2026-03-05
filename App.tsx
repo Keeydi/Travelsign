@@ -130,9 +130,9 @@ export default function App() {
       case '/poi-details':
         return <POIDetailsScreen onNavigate={handleNavigate} poi={routeParams.poi} />;
       case '/history':
-        return <HistoryScreen onNavigate={handleNavigate} />;
+        return <HistoryScreen onNavigate={handleNavigate} initialTab="history" />;
       case '/saved':
-        return <PlaceholderScreen title="Saved" route={route} onNavigate={handleNavigate} />;
+        return <HistoryScreen onNavigate={handleNavigate} initialTab="saved" />;
       case '/settings':
         return <SettingsScreen onNavigate={handleNavigate} />;
       case '/permissions':

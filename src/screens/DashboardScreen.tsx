@@ -15,7 +15,7 @@ export function DashboardScreen({ onNavigate }) {
       >
         <Header userName="Traveler" />
         <QuickActions onNavigate={onNavigate} />
-        <RecentActivity />
+        <RecentActivity onNavigate={onNavigate} />
         <SuggestedPOI onNavigate={onNavigate} />
       </ScrollView>
     </View>

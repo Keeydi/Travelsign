@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { translateText } from '../services/translate';
+import { addToSaved, isSavedItem } from '../services/historyStorage';
+import { Toast } from '../components/Toast';
 
 type TranslationResultScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
@@ -20,17 +22,36 @@ type TranslationResultScreenProps = {
   };
 };
 
+const LANGUAGES = [
+  { code: 'en', label: 'EN', name: 'English' },
+  { code: 'ja', label: 'JA', name: 'Japanese' },
+  { code: 'zh', label: 'ZH', name: 'Chinese' },
+  { code: 'es', label: 'ES', name: 'Spanish' },
+  { code: 'ko', label: 'KO', name: 'Korean' },
+] as const;
+
+type LangCode = (typeof LANGUAGES)[number]['code'];
+
 export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = ({
   onNavigate,
   originalText,
   translatedText,
   captureLocation,
 }) => {
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'ja' | 'zh' | 'es' | 'ko'>('en');
-  const [currentTranslation, setCurrentTranslation] = useState<string>(translatedText ?? '');
+  const [currentLanguage, setCurrentLanguage] = useState<LangCode>('en');
+  const [currentTranslation, setCurrentTranslation] = useState<string>(
+    translatedText ?? ''
+  );
   const [isTranslating, setIsTranslating] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleChangeLanguage = async (lang: 'en' | 'ja' | 'zh' | 'es' | 'ko') => {
+  useEffect(() => {
+    if (!originalText && !translatedText) return;
+    isSavedItem(originalText ?? '', translatedText ?? '').then(setSaved);
+  }, [originalText, translatedText]);
+
+  const handleChangeLanguage = async (lang: LangCode) => {
     if (!originalText || isTranslating) return;
     try {
       setIsTranslating(true);
@@ -44,35 +65,33 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
     }
   };
 
-  const renderLanguageButton = (
-    label: string,
-    lang: 'en' | 'ja' | 'zh' | 'es' | 'ko'
-  ) => {
-    const selected = currentLanguage === lang;
-    return (
-      <TouchableOpacity
-        key={lang}
-        style={[
-          styles.languageChip,
-          selected && styles.languageChipSelected,
-        ]}
-        onPress={() => handleChangeLanguage(lang)}
-        disabled={isTranslating || !originalText}
-      >
-        <Text
-          style={[
-            styles.languageChipText,
-            selected && styles.languageChipTextSelected,
-          ]}
-        >
-          {label}
-        </Text>
-      </TouchableOpacity>
+  const handleSave = async () => {
+    if (saved || isSaving) return;
+    setIsSaving(true);
+    const result = await addToSaved(
+      originalText ?? '',
+      currentTranslation || translatedText ?? ''
     );
+    setIsSaving(false);
+    if (result) {
+      setSaved(true);
+      Toast.show({
+        type: 'success',
+        text1: 'Saved',
+        text2: 'Translation saved to your bookmarks.',
+      });
+    } else {
+      Toast.show({
+        type: 'info',
+        text1: 'Already saved',
+        text2: 'This translation is already in your saved list.',
+      });
+    }
   };
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -81,10 +100,25 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
           <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Translation</Text>
-        <View style={styles.headerRight} />
+        <TouchableOpacity
+          style={[styles.saveButton, saved && styles.saveButtonActive]}
+          onPress={handleSave}
+          disabled={isSaving || saved}
+        >
+          <Feather
+            name="bookmark"
+            size={20}
+            color={saved ? '#FFFFFF' : theme.colors.primary}
+          />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Original text card */}
         <View style={styles.card}>
           <Text style={styles.label}>Original</Text>
           <Text style={styles.originalText}>
@@ -92,16 +126,39 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
           </Text>
         </View>
 
+        {/* Translated text card */}
         <View style={styles.card}>
           <Text style={styles.label}>Translated</Text>
 
-          <View style={styles.languageRow}>
-            {renderLanguageButton('EN', 'en')}
-            {renderLanguageButton('Japanese', 'ja')}
-            {renderLanguageButton('Chinese', 'zh')}
-            {renderLanguageButton('Spanish', 'es')}
-            {renderLanguageButton('Korean', 'ko')}
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.languageRow}
+          >
+            {LANGUAGES.map(({ code, label, name }) => {
+              const selected = currentLanguage === code;
+              return (
+                <TouchableOpacity
+                  key={code}
+                  style={[styles.languageChip, selected && styles.languageChipSelected]}
+                  onPress={() => handleChangeLanguage(code)}
+                  disabled={isTranslating || !originalText}
+                >
+                  <Text
+                    style={[
+                      styles.languageChipText,
+                      selected && styles.languageChipTextSelected,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                  {selected && (
+                    <Text style={styles.languageChipName}> · {name}</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
 
           <Text style={styles.translatedText}>
             {isTranslating
@@ -110,15 +167,17 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
           </Text>
         </View>
 
+        {/* Location row */}
         {captureLocation && (
           <View style={styles.locationRow}>
-            <Feather name="map-pin" size={16} color={theme.colors.textSecondary} />
+            <Feather name="map-pin" size={14} color={theme.colors.muted} />
             <Text style={styles.locationText}>
-              {captureLocation.lat.toFixed(4)}, {captureLocation.lng.toFixed(4)}
+              Captured at {captureLocation.lat.toFixed(4)}, {captureLocation.lng.toFixed(4)}
             </Text>
           </View>
         )}
 
+        {/* Action buttons */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={styles.secondaryButton}
@@ -130,13 +189,15 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
 
           <TouchableOpacity
             style={styles.primaryButton}
-            onPress={() => onNavigate('/poi-list', { pois: [], location: captureLocation })}
+            onPress={() =>
+              onNavigate('/poi-list', { pois: [], location: captureLocation })
+            }
           >
             <Feather name="map" size={18} color="#FFFFFF" />
             <Text style={styles.primaryButtonText}>Nearby places</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -152,6 +213,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   backButton: {
     width: 40,
@@ -166,13 +229,27 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: theme.colors.textPrimary,
   },
-  headerRight: {
+  saveButton: {
     width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '40',
+  },
+  saveButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  scroll: {
+    flex: 1,
   },
   content: {
-    flex: 1,
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
   },
   card: {
     borderRadius: theme.shapes.cardRadius,
@@ -181,29 +258,34 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: theme.typography.medium,
-    fontSize: 12,
+    fontSize: 11,
     color: theme.colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: theme.spacing.xs,
+    letterSpacing: 1.2,
+    marginBottom: theme.spacing.sm,
   },
   originalText: {
     fontFamily: theme.typography.regular,
     fontSize: 16,
     color: theme.colors.textSecondary,
+    lineHeight: 22,
   },
   translatedText: {
     fontFamily: theme.typography.semibold,
-    fontSize: 20,
+    fontSize: 22,
     color: theme.colors.textPrimary,
+    lineHeight: 30,
+    marginTop: theme.spacing.sm,
   },
   languageRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: theme.spacing.xs,
     marginBottom: theme.spacing.sm,
+    paddingRight: theme.spacing.sm,
   },
   languageChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: 6,
     borderRadius: 999,
@@ -216,29 +298,32 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   languageChipText: {
-    fontFamily: theme.typography.medium,
+    fontFamily: theme.typography.semibold,
     fontSize: 12,
     color: theme.colors.textSecondary,
   },
   languageChipTextSelected: {
     color: '#FFFFFF',
   },
+  languageChipName: {
+    fontFamily: theme.typography.regular,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+  },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: theme.spacing.sm,
+    gap: theme.spacing.xs,
   },
   locationText: {
-    marginLeft: theme.spacing.xs,
     fontFamily: theme.typography.regular,
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: theme.colors.muted,
   },
   actionsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 'auto',
     gap: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
   },
   primaryButton: {
     flex: 1,
@@ -248,11 +333,11 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     borderRadius: theme.shapes.buttonRadius,
     paddingVertical: theme.spacing.md,
+    gap: theme.spacing.xs,
   },
   primaryButtonText: {
-    marginLeft: theme.spacing.xs,
     fontFamily: theme.typography.semibold,
-    fontSize: 16,
+    fontSize: 15,
     color: '#FFFFFF',
   },
   secondaryButton: {
@@ -265,13 +350,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.backgroundLight,
+    gap: theme.spacing.xs,
   },
   secondaryButtonText: {
-    marginLeft: theme.spacing.xs,
     fontFamily: theme.typography.medium,
-    fontSize: 16,
+    fontSize: 15,
     color: theme.colors.textPrimary,
   },
 });
-
-

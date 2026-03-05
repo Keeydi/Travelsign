@@ -14,6 +14,7 @@ import { theme } from '../theme';
 import { extractTextFromImage } from '../services/ocr';
 import { translateText } from '../services/translate';
 import { getCurrentLocation } from '../services/location';
+import { addToHistory } from '../services/historyStorage';
 
 type ScanPreviewScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
@@ -82,6 +83,8 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
 
       // 3) Translate detected text (default to English UI language)
       const translated = await translateText(detectedText, 'en');
+
+      await addToHistory(detectedText, translated);
 
       onNavigate('/translation-result', {
         originalText: detectedText,

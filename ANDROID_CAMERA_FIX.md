@@ -11,8 +11,8 @@
 ### 2. Improved `ScanScreen.tsx`
 - Better permission request logic
 - Automatic permission request on screen load
-- Manual permission request button
-- Ability to open Android settings
+- Manual permission request button (“Allow camera”)
+- **Open Settings** – “Open Settings” button when permission denied (opens app settings); Alert also offers “Open Settings”
 - Better error handling and logging
 
 ## 🔧 Additional Steps Required
@@ -94,9 +94,21 @@ The updated code includes console logs. Check your terminal/console for:
 - [ ] App requests permission on first launch
 - [ ] Permission dialog appears
 - [ ] Camera view shows after granting permission
-- [ ] "Open Settings" button works if permission denied
+- [ ] “Open Settings” button works when permission denied (Scan screen + Alert)
 - [ ] App handles permission denial gracefully
 - [ ] Console logs show permission state correctly
+
+---
+
+## 🔍 Gaps found and fixed
+
+| Item | Status |
+|------|--------|
+| **“Open Settings” button** | Doc said it was included; it was not. **Added:** “Open Settings” on the denied state screen + “Open Settings” in the manual-request Alert. |
+| Automatic permission on load | ✅ Implemented |
+| Manual “Allow camera” button | ✅ Implemented |
+| Debug logging | ✅ Implemented |
+| `app.json` Android CAMERA + package | ✅ Present |
 
 ## 🔄 Next Steps
 

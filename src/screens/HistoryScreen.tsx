@@ -1,37 +1,125 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import {
+  getHistory,
+  getSaved,
+  clearHistory,
+  clearSaved,
+  removeFromHistory,
+  removeFromSaved,
+  formatHistoryItemTimestamp,
+  type HistoryItem,
+} from '../services/historyStorage';
 
-type HistoryItem = {
-  id: string;
-  originalText: string;
-  translatedText: string;
-  timestamp: string;
-};
+type Tab = 'history' | 'saved';
 
 type HistoryScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
+  initialTab?: Tab;
 };
 
-export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate }) => {
-  const data: HistoryItem[] = [
-    {
-      id: '1',
-      originalText: 'Sortie de secours',
-      translatedText: 'Emergency exit',
-      timestamp: '2 min ago',
-    },
-    {
-      id: '2',
-      originalText: 'Accès interdit',
-      translatedText: 'No entry',
-      timestamp: '15 min ago',
-    },
-  ];
+export const HistoryScreen: React.FC<HistoryScreenProps> = ({
+  onNavigate,
+  initialTab = 'history',
+}) => {
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
+  const [savedData, setSavedData] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const data = activeTab === 'history' ? historyData : savedData;
+
+  const loadData = useCallback(async () => {
+    const [h, s] = await Promise.all([getHistory(), getSaved()]);
+    setHistoryData(h);
+    setSavedData(s);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      await loadData();
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [loadData]);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  }, [loadData]);
+
+  const handleClear = () => {
+    const label = activeTab === 'history' ? 'history' : 'saved items';
+    Alert.alert(
+      `Clear ${activeTab === 'history' ? 'History' : 'Saved'}`,
+      `Remove all ${label}? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: async () => {
+            if (activeTab === 'history') {
+              await clearHistory();
+              setHistoryData([]);
+            } else {
+              await clearSaved();
+              setSavedData([]);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRemoveItem = (item: HistoryItem) => {
+    Alert.alert('Remove item', 'Remove this item?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          if (activeTab === 'history') {
+            await removeFromHistory(item.id);
+            setHistoryData((prev) => prev.filter((i) => i.id !== item.id));
+          } else {
+            await removeFromSaved(item.id);
+            setSavedData((prev) => prev.filter((i) => i.id !== item.id));
+          }
+        },
+      },
+    ]);
+  };
+
+  const emptyIcon = activeTab === 'history' ? 'clock' : 'bookmark';
+  const emptyTitle = activeTab === 'history' ? 'No history yet' : 'Nothing saved yet';
+  const emptyText =
+    activeTab === 'history'
+      ? 'Scan a sign to translate it. Your translations will appear here.'
+      : 'Tap the bookmark button on a translation to save it here.';
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -39,40 +127,137 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate }) => {
         >
           <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>History</Text>
-        <View style={styles.headerRight} />
+        <Text style={styles.headerTitle}>
+          {activeTab === 'history' ? 'History' : 'Saved'}
+        </Text>
+        {data.length > 0 ? (
+          <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
+            <Text style={styles.clearButtonText}>Clear</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerRight} />
+        )}
       </View>
 
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.item}
-            onPress={() =>
-              onNavigate('/translation-result', {
-                originalText: item.originalText,
-                translatedText: item.translatedText,
-              })
-            }
+      {/* Tabs */}
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'history' && styles.tabActive]}
+          onPress={() => setActiveTab('history')}
+        >
+          <Feather
+            name="clock"
+            size={15}
+            color={activeTab === 'history' ? theme.colors.primary : theme.colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.tabLabel,
+              activeTab === 'history' && styles.tabLabelActive,
+            ]}
           >
-            <View style={styles.iconContainer}>
-              <Feather name="clock" size={18} color={theme.colors.primary} />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.primaryText} numberOfLines={1}>
-                {item.translatedText}
-              </Text>
-              <Text style={styles.secondaryText} numberOfLines={1}>
-                {item.originalText}
+            History
+          </Text>
+          {historyData.length > 0 && (
+            <View style={[styles.badge, activeTab === 'history' && styles.badgeActive]}>
+              <Text style={[styles.badgeText, activeTab === 'history' && styles.badgeTextActive]}>
+                {historyData.length}
               </Text>
             </View>
-            <Text style={styles.timeText}>{item.timestamp}</Text>
-          </TouchableOpacity>
-        )}
-      />
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'saved' && styles.tabActive]}
+          onPress={() => setActiveTab('saved')}
+        >
+          <Feather
+            name="bookmark"
+            size={15}
+            color={activeTab === 'saved' ? theme.colors.primary : theme.colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.tabLabel,
+              activeTab === 'saved' && styles.tabLabelActive,
+            ]}
+          >
+            Saved
+          </Text>
+          {savedData.length > 0 && (
+            <View style={[styles.badge, activeTab === 'saved' && styles.badgeActive]}>
+              <Text style={[styles.badgeText, activeTab === 'saved' && styles.badgeTextActive]}>
+                {savedData.length}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading…</Text>
+        </View>
+      ) : data.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconWrap}>
+            <Feather name={emptyIcon} size={32} color={theme.colors.muted} />
+          </View>
+          <Text style={styles.emptyTitle}>{emptyTitle}</Text>
+          <Text style={styles.emptyText}>{emptyText}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[theme.colors.primary]}
+            />
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.item}
+              onPress={() =>
+                onNavigate('/translation-result', {
+                  originalText: item.originalText,
+                  translatedText: item.translatedText,
+                })
+              }
+              onLongPress={() => handleRemoveItem(item)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.iconContainer}>
+                <Feather
+                  name={activeTab === 'history' ? 'clock' : 'bookmark'}
+                  size={17}
+                  color={theme.colors.primary}
+                />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={styles.primaryText} numberOfLines={1}>
+                  {item.translatedText || '—'}
+                </Text>
+                <Text style={styles.secondaryText} numberOfLines={1}>
+                  {item.originalText || '—'}
+                </Text>
+              </View>
+              <Text style={styles.timeText}>
+                {formatHistoryItemTimestamp(item)}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+
+      {data.length > 0 && (
+        <Text style={styles.hintText}>Long press an item to remove it</Text>
+      )}
     </View>
   );
 };
@@ -88,6 +273,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   backButton: {
     width: 40,
@@ -104,6 +291,109 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     width: 40,
+  },
+  clearButton: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#FEF2F2',
+  },
+  clearButtonText: {
+    fontFamily: theme.typography.semibold,
+    fontSize: 14,
+    color: theme.colors.danger,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    gap: theme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: theme.colors.backgroundLight,
+  },
+  tabActive: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '40',
+  },
+  tabLabel: {
+    fontFamily: theme.typography.medium,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  tabLabelActive: {
+    fontFamily: theme.typography.semibold,
+    color: theme.colors.primary,
+  },
+  badge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: theme.colors.muted,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  badgeText: {
+    fontFamily: theme.typography.bold,
+    fontSize: 10,
+    color: '#FFFFFF',
+  },
+  badgeTextActive: {
+    color: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  loadingText: {
+    fontFamily: theme.typography.regular,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.xl,
+  },
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: theme.colors.backgroundLight,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+  },
+  emptyTitle: {
+    fontFamily: theme.typography.semibold,
+    fontSize: 18,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.sm,
+  },
+  emptyText: {
+    fontFamily: theme.typography.regular,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   listContent: {
     paddingHorizontal: theme.spacing.lg,
@@ -124,7 +414,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.backgroundLight,
+    backgroundColor: '#EFF6FF',
     marginRight: theme.spacing.md,
   },
   textContainer: {
@@ -132,7 +422,7 @@ const styles = StyleSheet.create({
   },
   primaryText: {
     fontFamily: theme.typography.semibold,
-    fontSize: 16,
+    fontSize: 15,
     color: theme.colors.textPrimary,
   },
   secondaryText: {
@@ -145,11 +435,13 @@ const styles = StyleSheet.create({
     marginLeft: theme.spacing.sm,
     fontFamily: theme.typography.regular,
     fontSize: 12,
-    color: theme.colors.textSecondary,
+    color: theme.colors.muted,
+  },
+  hintText: {
+    fontFamily: theme.typography.regular,
+    fontSize: 11,
+    color: theme.colors.muted,
+    textAlign: 'center',
+    paddingVertical: theme.spacing.sm,
   },
 });
-
-
-
-
-

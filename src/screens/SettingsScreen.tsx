@@ -1,54 +1,172 @@
-import { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Text,
+  Alert,
+  Linking,
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LanguageSelector } from '../components/LanguageSelector';
-import { OfflinePacksManager } from '../components/OfflinePacksManager';
 import { ToggleAROverlay } from '../components/ToggleAROverlay';
 import { ThemeSwitch } from '../components/ThemeSwitch';
-import { PrivacyPolicy } from '../components/PrivacyPolicy';
-import { AboutApp } from '../components/AboutApp';
 import { theme } from '../theme';
 import { Toast } from '../components/Toast';
 
-export function SettingsScreen({ onNavigate }) {
+type SettingsScreenProps = {
+  onNavigate: (route: string, params?: Record<string, any>) => void;
+};
+
+function SectionHeader({ title }: { title: string }) {
+  return <Text style={sectionStyles.header}>{title}</Text>;
+}
+
+function SettingsRow({
+  icon,
+  iconColor,
+  label,
+  sublabel,
+  onPress,
+  rightElement,
+  destructive,
+}: {
+  icon: string;
+  iconColor?: string;
+  label: string;
+  sublabel?: string;
+  onPress?: () => void;
+  rightElement?: React.ReactNode;
+  destructive?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      style={sectionStyles.row}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress && !rightElement}
+    >
+      <View
+        style={[
+          sectionStyles.rowIcon,
+          { backgroundColor: (iconColor ?? theme.colors.primary) + '18' },
+        ]}
+      >
+        <Feather
+          name={icon as any}
+          size={18}
+          color={iconColor ?? theme.colors.primary}
+        />
+      </View>
+      <View style={sectionStyles.rowText}>
+        <Text
+          style={[
+            sectionStyles.rowLabel,
+            destructive && { color: theme.colors.danger },
+          ]}
+        >
+          {label}
+        </Text>
+        {sublabel ? (
+          <Text style={sectionStyles.rowSublabel}>{sublabel}</Text>
+        ) : null}
+      </View>
+      {rightElement ?? (
+        onPress ? (
+          <Feather
+            name="chevron-right"
+            size={18}
+            color={theme.colors.muted}
+          />
+        ) : null
+      )}
+    </TouchableOpacity>
+  );
+}
+
+const sectionStyles = StyleSheet.create({
+  header: {
+    fontFamily: theme.typography.semibold,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: theme.spacing.sm,
+    marginTop: theme.spacing.lg,
+    paddingHorizontal: 2,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  rowIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.md,
+  },
+  rowText: {
+    flex: 1,
+  },
+  rowLabel: {
+    fontFamily: theme.typography.medium,
+    fontSize: 15,
+    color: theme.colors.textPrimary,
+  },
+  rowSublabel: {
+    fontFamily: theme.typography.regular,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 2,
+  },
+});
+
+export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [arOverlayEnabled, setArOverlayEnabled] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const handleLanguageChange = (langCode) => {
+  const handleLanguageChange = (langCode: string) => {
     setSelectedLanguage(langCode);
-    // Action: refreshAppLocale
     Toast.show({
       type: 'success',
-      text1: 'Language Changed',
-      text2: 'App language updated',
+      text1: 'Language Updated',
+      text2: 'Translation language has been changed.',
     });
   };
 
-  const handleAROverlayToggle = (enabled) => {
+  const handleAROverlayToggle = (enabled: boolean) => {
     setArOverlayEnabled(enabled);
-    // Action: enableFeatureFlag
-    console.log('Text Detection Overlay:', enabled);
   };
 
-  const handleThemeToggle = (isDark) => {
+  const handleThemeToggle = (isDark: boolean) => {
     setIsDarkMode(isDark);
-    // In production, this would change the theme
-    console.log('Theme:', isDark ? 'Dark' : 'Light');
   };
 
-  const handleDownloadOfflinePack = () => {
-    // Action: savePackLocally
-    Toast.show({
-      type: 'info',
-      text1: 'Download Started',
-      text2: 'Offline map pack downloading...',
-    });
+  const handleOfflineMaps = () => {
+    Alert.alert(
+      'Offline Maps',
+      'Download map regions to use them without an internet connection. This feature requires additional storage space.\n\nOffline map downloads will be available in a future update.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handlePrivacyPolicy = () => {
+    Linking.openURL('https://example.com/privacy-policy').catch(() =>
+      Alert.alert('Error', 'Could not open the privacy policy.')
+    );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -65,27 +183,63 @@ export function SettingsScreen({ onNavigate }) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <LanguageSelector
-          selectedLanguage={selectedLanguage}
-          onSelect={handleLanguageChange}
-        />
-        <OfflinePacksManager onDownload={handleDownloadOfflinePack} />
-        <ToggleAROverlay
-          enabled={arOverlayEnabled}
-          onToggle={handleAROverlayToggle}
-        />
-        <ThemeSwitch isDark={isDarkMode} onToggle={handleThemeToggle} />
-        <PrivacyPolicy />
-        <AboutApp />
+        {/* Translation */}
+        <SectionHeader title="Translation" />
+        <View style={styles.settingsCard}>
+          <LanguageSelector
+            selectedLanguage={selectedLanguage}
+            onSelect={handleLanguageChange}
+          />
+        </View>
+
+        {/* Display */}
+        <SectionHeader title="Display" />
+        <View style={styles.settingsCard}>
+          <ToggleAROverlay
+            enabled={arOverlayEnabled}
+            onToggle={handleAROverlayToggle}
+          />
+          <ThemeSwitch isDark={isDarkMode} onToggle={handleThemeToggle} />
+        </View>
+
+        {/* Maps */}
+        <SectionHeader title="Maps & Navigation" />
+        <View style={[styles.settingsCard, styles.rowsCard]}>
+          <SettingsRow
+            icon="download"
+            label="Offline Maps"
+            sublabel="Download maps for offline use"
+            onPress={handleOfflineMaps}
+          />
+        </View>
+
+        {/* About */}
+        <SectionHeader title="About" />
+        <View style={[styles.settingsCard, styles.rowsCard]}>
+          <SettingsRow
+            icon="shield"
+            label="Privacy Policy"
+            sublabel="How we handle your data"
+            onPress={handlePrivacyPolicy}
+          />
+          <SettingsRow
+            icon="info"
+            iconColor={theme.colors.textSecondary}
+            label="App Version"
+            sublabel="LinguaJourney 1.0.0"
+          />
+        </View>
+
+        <View style={styles.bottomSpacing} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.backgroundLight,
   },
   header: {
     flexDirection: 'row',
@@ -95,6 +249,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
   },
   backButton: {
     width: 40,
@@ -115,8 +270,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.xxl,
+  },
+  settingsCard: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.shapes.cardRadius,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
+  },
+  rowsCard: {
+    padding: 0,
+  },
+  bottomSpacing: {
+    height: theme.spacing.xl,
   },
 });
-
