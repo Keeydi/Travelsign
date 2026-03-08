@@ -1,31 +1,32 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-} from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
-import { getCurrentLocation } from '../services/location';
-import { fetchSuggestedPlaces, type SuggestedPlace } from '../services/suggest';
 
-// Fallback cards shown while loading or if API fails
-const FALLBACK_PLACES: SuggestedPlace[] = [
+type POI = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  rating: string;
+  distance: string;
+  image: string;
+  lat?: number;
+  lng?: number;
+};
+
+const SAMPLE_PLACES: POI[] = [
   {
-    id: 'f1',
+    id: '1',
     name: 'Asakusa Temple',
-    category: 'Landmark',
-    description: 'One of Tokyo\'s most famous temples, featuring the iconic Kaminarimon gate and a lively shopping street.',
+    category: 'Religious Site',
+    description: 'One of Tokyo's most famous temples, featuring the iconic Kaminarimon gate and a lively shopping street.',
     rating: '4.8',
     distance: '0.4 km',
     image: 'https://images.unsplash.com/photo-1570521462033-3015e76e7432?w=400&q=80',
   },
   {
-    id: 'f2',
+    id: '2',
     name: 'Central Market',
     category: 'Market',
     description: 'A bustling local market offering fresh produce, street food, and handcrafted souvenirs.',
@@ -34,114 +35,61 @@ const FALLBACK_PLACES: SuggestedPlace[] = [
     image: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&q=80',
   },
   {
-    id: 'f3',
+    id: '3',
     name: 'Riverside Walk',
     category: 'Park',
-    description: 'A scenic waterfront promenade perfect for a leisurely stroll with great city views.',
+    description: 'A scenic waterfront promenade perfect for a leisurely stroll, with great views of the city skyline.',
     rating: '4.6',
     distance: '1.2 km',
     image: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=400&q=80',
   },
   {
-    id: 'f4',
+    id: '4',
     name: 'Old Town Square',
     category: 'Historical',
-    description: 'A charming historic plaza surrounded by colorful colonial buildings and local galleries.',
+    description: 'A charming historic plaza surrounded by colorful colonial buildings, cafes, and local art galleries.',
     rating: '4.7',
     distance: '1.6 km',
     image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&q=80',
+  },
+  {
+    id: '5',
+    name: 'Skyline Viewpoint',
+    category: 'Viewpoint',
+    description: 'The best panoramic spot in the city offering breathtaking 360° views, especially at sunset.',
+    rating: '4.9',
+    distance: '2.1 km',
+    image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80',
   },
 ];
 
 type SuggestedPOIProps = {
   onNavigate?: (route: string, params?: Record<string, any>) => void;
-  pois?: SuggestedPlace[];
+  pois?: POI[];
 };
 
 export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
-  const [places, setPlaces] = useState<SuggestedPlace[]>(
-    pois && pois.length > 0 ? pois : FALLBACK_PLACES
-  );
-  const [locationLabel, setLocationLabel] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const displayPois = (pois && pois.length > 0) ? pois : SAMPLE_PLACES;
 
-  useEffect(() => {
-    if (pois && pois.length > 0) {
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        setError(false);
-        const loc = await getCurrentLocation();
-        if (!loc) throw new Error('Location unavailable');
-
-        const result = await fetchSuggestedPlaces(loc.lat, loc.lng);
-        if (!cancelled) {
-          if (result.places.length > 0) {
-            setPlaces(result.places);
-          } else {
-            setPlaces(FALLBACK_PLACES);
-            setError(true);
-          }
-          setLocationLabel(result.location);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setPlaces(FALLBACK_PLACES);
-          setError(true);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [pois]);
-
-  const handlePOIClick = (poi: SuggestedPlace) => {
+  const handlePOIClick = (poi: POI) => {
     onNavigate?.('/poi-details', { poi });
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Suggested Places</Text>
-          {loading && (
-            <ActivityIndicator
-              size="small"
-              color={theme.colors.primary}
-              style={styles.spinner}
-            />
-          )}
-        </View>
-        <TouchableOpacity onPress={() => onNavigate?.('/poi-list', { pois: places })}>
+        <Text style={styles.title}>Suggested Places</Text>
+        <TouchableOpacity onPress={() => onNavigate?.('/poi-list', { pois: displayPois })}>
           <Text style={styles.seeAll}>See All</Text>
         </TouchableOpacity>
       </View>
-
-      {locationLabel ? (
-        <View style={styles.locationRow}>
-          <Feather name="map-pin" size={12} color={theme.colors.primary} />
-          <Text style={styles.locationText}>Near {locationLabel}</Text>
-          <View style={styles.aiBadge}>
-            <Feather name="zap" size={10} color={theme.colors.primary} />
-            <Text style={styles.aiBadgeText}>AI</Text>
-          </View>
-        </View>
-      ) : null}
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {places.map((poi) => (
+        {displayPois.map((poi) => (
           <TouchableOpacity
             key={poi.id}
             style={styles.poiCard}
@@ -154,7 +102,7 @@ export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
                 style={styles.image}
                 resizeMode="cover"
               />
-              <View style={styles.imageDim} />
+              <View style={styles.imageOverlay} />
               <View style={styles.categoryBadge}>
                 <Text style={styles.categoryBadgeText}>{poi.category}</Text>
               </View>
@@ -169,11 +117,11 @@ export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
               </Text>
               <View style={styles.footer}>
                 <View style={styles.ratingContainer}>
-                  <Feather name="star" size={12} color="#D97706" />
+                  <Feather name="star" size={13} color={theme.colors.accent} />
                   <Text style={styles.rating}>{poi.rating}</Text>
                 </View>
                 <View style={styles.distanceContainer}>
-                  <Feather name="map-pin" size={11} color={theme.colors.textSecondary} />
+                  <Feather name="map-pin" size={12} color={theme.colors.textSecondary} />
                   <Text style={styles.distance}>{poi.distance}</Text>
                 </View>
               </View>
@@ -181,12 +129,6 @@ export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      {error && (
-        <Text style={styles.errorHint}>
-          Showing sample places — connect to backend for personalized AI suggestions
-        </Text>
-      )}
     </View>
   );
 }
@@ -199,12 +141,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
   title: {
     fontFamily: theme.typography.bold,
@@ -212,42 +149,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     letterSpacing: -0.5,
   },
-  spinner: {
-    marginLeft: 4,
-  },
   seeAll: {
     fontFamily: theme.typography.semibold,
     fontSize: 15,
     color: theme.colors.primary,
     letterSpacing: 0.2,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: theme.spacing.md,
-  },
-  locationText: {
-    fontFamily: theme.typography.medium,
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    flex: 1,
-  },
-  aiBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 999,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderWidth: 1,
-    borderColor: theme.colors.primary + '30',
-  },
-  aiBadgeText: {
-    fontFamily: theme.typography.bold,
-    fontSize: 10,
-    color: theme.colors.primary,
   },
   scrollContent: {
     paddingRight: theme.spacing.lg,
@@ -271,15 +177,15 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  imageDim: {
+  imageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.08)',
+    background: 'transparent',
   },
   categoryBadge: {
     position: 'absolute',
     bottom: theme.spacing.sm,
     left: theme.spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -295,7 +201,7 @@ const styles = StyleSheet.create({
   },
   poiName: {
     fontFamily: theme.typography.bold,
-    fontSize: 16,
+    fontSize: 17,
     color: theme.colors.textPrimary,
     marginBottom: 4,
     letterSpacing: -0.3,
@@ -316,14 +222,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: '#FFF7ED',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 10,
   },
   rating: {
     fontFamily: theme.typography.bold,
-    fontSize: 11,
+    fontSize: 12,
     color: '#92400E',
   },
   distanceContainer: {
@@ -333,15 +239,7 @@ const styles = StyleSheet.create({
   },
   distance: {
     fontFamily: theme.typography.medium,
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.textSecondary,
-  },
-  errorHint: {
-    fontFamily: theme.typography.regular,
-    fontSize: 11,
-    color: theme.colors.muted,
-    textAlign: 'center',
-    marginTop: theme.spacing.sm,
-    fontStyle: 'italic',
   },
 });
