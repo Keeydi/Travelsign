@@ -63,6 +63,12 @@ export async function extractTextFromImage(
     if (err.name === 'AbortError') {
       throw new Error('OCR request timed out. Please check your connection and try again.');
     }
+    if (err?.message?.includes('Invalid image') || err?.message?.includes('base64')) {
+      throw new Error('Image could not be read. Try taking the photo again.');
+    }
+    if (err?.message?.includes('fetch') || err?.message?.includes('Network')) {
+      throw new Error('Cannot reach the server. Check your connection and that the backend is running.');
+    }
     console.error('OCR: Request failed', err);
     throw err;
   }

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Platform, Linking } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as FileSystem from 'expo-file-system';
 import { theme } from '../theme';
 
 type ScanScreenProps = {
@@ -130,20 +131,38 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
     try {
       setIsCapturing(true);
       console.log('ScanScreen: Taking picture...');
+      // On Android, base64 is sometimes not returned; use skipProcessing: false for reliability
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: Platform.OS === 'android' ? 0.6 : 0.8,
         base64: true,
+        skipProcessing: false,
       } as any);
 
-      console.log('ScanScreen: Picture taken', { hasUri: !!photo?.uri });
+      console.log('ScanScreen: Picture taken', { hasUri: !!photo?.uri, hasBase64: !!photo?.base64, platform: Platform.OS });
 
       if (!photo || !photo.uri) {
         throw new Error('No photo captured');
       }
 
+      let base64Data = photo.base64;
+      // Android often doesn't return base64 from takePictureAsync; read from file as fallback
+      if (!base64Data && photo.uri) {
+        try {
+          base64Data = await FileSystem.readAsStringAsync(photo.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+        } catch (e) {
+          console.error('ScanScreen: Failed to read image as base64', e);
+        }
+      }
+
+      if (!base64Data) {
+        throw new Error('Could not get image data. Try scanning again.');
+      }
+
       onNavigate('/scan-preview', {
         previewImageUri: photo.uri,
-        previewImageBase64: photo.base64,
+        previewImageBase64: base64Data,
       });
     } catch (err) {
       console.error('ScanScreen: Failed to capture image', err);

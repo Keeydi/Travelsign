@@ -97,9 +97,9 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
       });
     } catch (err: any) {
       console.error('OCR/translate failed', err);
-      const errorMessage = err?.message || 'Failed to process image. Please try again.';
-      // Show error to user
-      Alert.alert('Translation Error', errorMessage, [{ text: 'OK' }]);
+      const errorMessage =
+        err?.message || 'OCR failed. Try scanning again or check your connection.';
+      Alert.alert('OCR Error', errorMessage, [{ text: 'OK' }]);
       onNavigate('/translation-result', {
         originalText: '',
         translatedText: '',
