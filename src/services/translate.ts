@@ -2,21 +2,11 @@ import { BACKEND_CONFIG } from '../config/backend';
 
 const { BASE_URL, TIMEOUT_MS } = BACKEND_CONFIG;
 
-// Map UI language choices to friendly labels for Gemini.
-const langMap: Record<'en' | 'ja' | 'zh' | 'es' | 'ko', string> = {
-  en: 'English',
-  ja: 'Japanese',
-  zh: 'Chinese',
-  es: 'Spanish',
-  ko: 'Korean',
-};
-
 export async function translateText(
   text: string,
   targetLanguage: 'en' | 'ja' | 'zh' | 'es' | 'ko'
 ): Promise<string> {
   if (!text) return '';
-  const target = langMap[targetLanguage] ?? 'English';
 
   try {
     const controller = new AbortController();
@@ -29,7 +19,7 @@ export async function translateText(
       },
       body: JSON.stringify({
         text,
-        targetLang: target,
+        targetLang: targetLanguage,
       }),
       signal: controller.signal,
     });

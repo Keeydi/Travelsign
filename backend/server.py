@@ -43,14 +43,22 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 # Language code -> full name for Gemini
-_LANG_FOR_PROMPT = {"en": "English", "ja": "Japanese", "zh": "Chinese", "es": "Spanish", "ko": "Korean"}
+_LANG_FOR_PROMPT = {"en": "English", "ja": "Japanese", "zh": "Simplified Chinese", "es": "Spanish", "ko": "Korean"}
+# Accept both codes and full names from client (frontend may send "Japanese" or "ja")
+_LANG_ALIASES = {
+  "en": "en", "english": "en",
+  "ja": "ja", "japanese": "ja",
+  "zh": "zh", "chinese": "zh",
+  "es": "es", "spanish": "es",
+  "ko": "ko", "korean": "ko",
+}
 
 
 def _sanitize_lang(raw: str) -> str:
   if not raw or not isinstance(raw, str):
     return "en"
   v = raw.strip().lower()
-  return v if v in _LANG_FOR_PROMPT else "en"
+  return _LANG_ALIASES.get(v, "en")
 
 
 def _client_error(message: str, status: int = 400):
@@ -111,8 +119,9 @@ def translate():
 
   lang_name = _LANG_FOR_PROMPT.get(target_lang, "English")
   prompt = (
-    f"Translate this text into {lang_name} only. "
-    "Respond with the translation only, no explanation:\n\n" + text
+    f"You are a translator. Translate the following text into {lang_name}. "
+    f"Your reply must contain ONLY the {lang_name} translation, no English, no explanation, no extra text. "
+    f"If the text is already in {lang_name}, return it unchanged.\n\nText to translate:\n{text}"
   )
   try:
     resp = model.generate_content(prompt)

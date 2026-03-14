@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,6 +14,7 @@ import { ToggleAROverlay } from '../components/ToggleAROverlay';
 import { ThemeSwitch } from '../components/ThemeSwitch';
 import { theme } from '../theme';
 import { Toast } from '../components/Toast';
+import { getTranslationLanguage, setTranslationLanguage, type TranslationLanguageCode } from '../services/preferences';
 
 type SettingsScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
@@ -130,12 +131,18 @@ const sectionStyles = StyleSheet.create({
 });
 
 export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [selectedLanguage, setSelectedLanguage] = useState<TranslationLanguageCode>('en');
   const [arOverlayEnabled, setArOverlayEnabled] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  useEffect(() => {
+    getTranslationLanguage().then(setSelectedLanguage);
+  }, []);
+
   const handleLanguageChange = (langCode: string) => {
-    setSelectedLanguage(langCode);
+    const code = langCode as TranslationLanguageCode;
+    setSelectedLanguage(code);
+    setTranslationLanguage(code).catch(() => {});
     Toast.show({
       type: 'success',
       text1: 'Language Updated',

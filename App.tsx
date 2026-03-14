@@ -115,6 +115,7 @@ export default function App() {
             onNavigate={handleNavigate}
             originalText={routeParams.originalText}
             translatedText={routeParams.translatedText}
+            initialLanguage={routeParams.initialLanguage}
             captureLocation={routeParams.location}
           />
         );

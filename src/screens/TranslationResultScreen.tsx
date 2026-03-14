@@ -10,6 +10,7 @@ type TranslationResultScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
   originalText?: string;
   translatedText?: string;
+  initialLanguage?: LangCode;
   captureLocation?: {
     lat: number;
     lng: number;
@@ -36,9 +37,10 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
   onNavigate,
   originalText,
   translatedText,
+  initialLanguage = 'en',
   captureLocation,
 }) => {
-  const [currentLanguage, setCurrentLanguage] = useState<LangCode>('en');
+  const [currentLanguage, setCurrentLanguage] = useState<LangCode>(initialLanguage);
   const [currentTranslation, setCurrentTranslation] = useState<string>(
     translatedText ?? ''
   );
