@@ -5,8 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Text,
-  Alert,
-  Linking,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LanguageSelector } from '../components/LanguageSelector';
@@ -14,15 +12,17 @@ import { ToggleAROverlay } from '../components/ToggleAROverlay';
 import { ThemeSwitch } from '../components/ThemeSwitch';
 import { theme } from '../theme';
 import { Toast } from '../components/Toast';
-import { getTranslationLanguage, setTranslationLanguage, type TranslationLanguageCode } from '../services/preferences';
+import { getTranslationLanguage, type TranslationLanguageCode } from '../services/preferences';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type SettingsScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
 };
 
 function SectionHeader({ title }: { title: string }) {
-  return <Text style={sectionStyles.header}>{title}</Text>;
+  const { theme: activeTheme } = useTheme();
+  return <Text style={[sectionStyles.header, { color: activeTheme.colors.textSecondary }]}>{title}</Text>;
 }
 
 function SettingsRow({
@@ -42,9 +42,10 @@ function SettingsRow({
   rightElement?: React.ReactNode;
   destructive?: boolean;
 }) {
+  const { theme: activeTheme } = useTheme();
   return (
     <TouchableOpacity
-      style={sectionStyles.row}
+      style={[sectionStyles.row, { backgroundColor: activeTheme.colors.card, borderBottomColor: activeTheme.colors.border }]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
       disabled={!onPress && !rightElement}
@@ -52,26 +53,27 @@ function SettingsRow({
       <View
         style={[
           sectionStyles.rowIcon,
-          { backgroundColor: (iconColor ?? theme.colors.primary) + '18' },
+          { backgroundColor: (iconColor ?? activeTheme.colors.primary) + '18' },
         ]}
       >
         <Feather
           name={icon as any}
           size={18}
-          color={iconColor ?? theme.colors.primary}
+          color={iconColor ?? activeTheme.colors.primary}
         />
       </View>
       <View style={sectionStyles.rowText}>
         <Text
           style={[
             sectionStyles.rowLabel,
-            destructive && { color: theme.colors.danger },
+            { color: activeTheme.colors.textPrimary },
+            destructive && { color: activeTheme.colors.danger },
           ]}
         >
           {label}
         </Text>
         {sublabel ? (
-          <Text style={sectionStyles.rowSublabel}>{sublabel}</Text>
+          <Text style={[sectionStyles.rowSublabel, { color: activeTheme.colors.textSecondary }]}>{sublabel}</Text>
         ) : null}
       </View>
       {rightElement ?? (
@@ -79,7 +81,7 @@ function SettingsRow({
           <Feather
             name="chevron-right"
             size={18}
-            color={theme.colors.muted}
+            color={activeTheme.colors.muted}
           />
         ) : null
       )}
@@ -133,10 +135,11 @@ const sectionStyles = StyleSheet.create({
 
 export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
   const { theme: activeTheme, isDark: isDarkMode, setDark: setThemePreference } = useTheme();
+  const { language: contextLanguage, setLanguage: setContextLanguage, t } = useLanguage();
   const [selectedLanguage, setSelectedLanguage] = useState<TranslationLanguageCode | null>(null);
   const [arOverlayEnabled, setArOverlayEnabled] = useState(true);
 
-  // Load persisted language on mount and whenever user returns to this screen (no default until loaded)
+  // Load persisted language on mount; keep in sync with context when context updates (e.g. from another tab)
   useEffect(() => {
     let cancelled = false;
     getTranslationLanguage().then((lang) => {
@@ -144,16 +147,18 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
     });
     return () => { cancelled = true; };
   }, []);
+  useEffect(() => {
+    setSelectedLanguage(contextLanguage);
+  }, [contextLanguage]);
 
   const handleLanguageChange = (langCode: string) => {
     const code = langCode as TranslationLanguageCode;
     setSelectedLanguage(code);
-    setTranslationLanguage(code).catch(() => {});
-    // Keep selection in sync with storage so next time we open Settings we read the same value
+    setContextLanguage(code);
     Toast.show({
       type: 'success',
-      text1: 'Language Updated',
-      text2: 'Translation language has been changed.',
+      text1: t.languageUpdated,
+      text2: t.languageUpdatedMessage,
     });
   };
 
@@ -165,18 +170,8 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
     setThemePreference(isDark);
   };
 
-  const handleOfflineMaps = () => {
-    Alert.alert(
-      'Offline Maps',
-      'Download map regions to use them without an internet connection. This feature requires additional storage space.\n\nOffline map downloads will be available in a future update.',
-      [{ text: 'OK' }]
-    );
-  };
-
   const handlePrivacyPolicy = () => {
-    Linking.openURL('https://example.com/privacy-policy').catch(() =>
-      Alert.alert('Error', 'Could not open the privacy policy.')
-    );
+    onNavigate?.('/privacy-policy');
   };
 
   return (
@@ -188,7 +183,7 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
         >
           <Feather name="arrow-left" size={24} color={activeTheme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>{t.settings}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -198,11 +193,11 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
         showsVerticalScrollIndicator={false}
       >
         {/* Translation */}
-        <SectionHeader title="Translation" />
+        <SectionHeader title={t.translation} />
         <View style={[styles.settingsCard, { backgroundColor: activeTheme.colors.background, borderColor: activeTheme.colors.border }]}>
           {selectedLanguage === null ? (
             <View style={styles.loadingRow}>
-              <Text style={styles.loadingText}>Loading language…</Text>
+              <Text style={[styles.loadingText, { color: activeTheme.colors.textSecondary }]}>{t.loadingLanguage}</Text>
             </View>
           ) : (
             <LanguageSelector
@@ -213,7 +208,7 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
         </View>
 
         {/* Display */}
-        <SectionHeader title="Display" />
+        <SectionHeader title={t.display} />
         <View style={[styles.settingsCard, { backgroundColor: activeTheme.colors.background, borderColor: activeTheme.colors.border }]}>
           <ToggleAROverlay
             enabled={arOverlayEnabled}
@@ -222,31 +217,20 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
           <ThemeSwitch isDark={isDarkMode} onToggle={handleThemeToggle} />
         </View>
 
-        {/* Maps */}
-        <SectionHeader title="Maps & Navigation" />
-        <View style={[styles.settingsCard, styles.rowsCard, { backgroundColor: activeTheme.colors.background, borderColor: activeTheme.colors.border }]}>
-          <SettingsRow
-            icon="download"
-            label="Offline Maps"
-            sublabel="Download maps for offline use"
-            onPress={handleOfflineMaps}
-          />
-        </View>
-
         {/* About */}
-        <SectionHeader title="About" />
+        <SectionHeader title={t.about} />
         <View style={[styles.settingsCard, styles.rowsCard, { backgroundColor: activeTheme.colors.background, borderColor: activeTheme.colors.border }]}>
           <SettingsRow
             icon="shield"
-            label="Privacy Policy"
-            sublabel="How we handle your data"
+            label={t.privacyPolicy}
+            sublabel={t.privacyPolicySublabel}
             onPress={handlePrivacyPolicy}
           />
           <SettingsRow
             icon="info"
             iconColor={theme.colors.textSecondary}
-            label="App Version"
-            sublabel="LinguaJourney 1.0.0"
+            label={t.appVersion}
+            sublabel={t.appVersionSublabel}
           />
         </View>
 

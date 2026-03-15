@@ -1,22 +1,26 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const actions = [
-  { id: 'scan', label: 'Scan', icon: 'camera', route: '/scan' },
-  { id: 'history', label: 'History', icon: 'clock', route: '/history' },
-  { id: 'saved', label: 'Saved', icon: 'bookmark', route: '/saved' },
-  { id: 'settings', label: 'Settings', icon: 'settings', route: '/settings' },
+  { id: 'scan', labelKey: 'scan' as const, icon: 'camera', route: '/scan' },
+  { id: 'history', labelKey: 'history' as const, icon: 'clock', route: '/history' },
+  { id: 'saved', labelKey: 'saved' as const, icon: 'bookmark', route: '/saved' },
+  { id: 'settings', labelKey: 'settings' as const, icon: 'settings', route: '/settings' },
 ];
 
 export function QuickActions({ onNavigate }) {
+  const { t } = useLanguage();
+  const { theme: activeTheme } = useTheme();
   const handleAction = (route) => {
     onNavigate?.(route);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Quick Actions</Text>
+      <Text style={[styles.title, { color: activeTheme.colors.textPrimary }]}>{t.quickActions}</Text>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -25,14 +29,33 @@ export function QuickActions({ onNavigate }) {
         {actions.map((action) => (
           <TouchableOpacity
             key={action.id}
-            style={styles.actionCard}
+            style={[
+              styles.actionCard,
+              {
+                backgroundColor: activeTheme.colors.card,
+                borderColor: activeTheme.colors.border,
+                borderWidth: 1.5,
+                borderRadius: activeTheme.shapes.cardRadius,
+                ...activeTheme.shadow.card,
+              },
+            ]}
             onPress={() => handleAction(action.route)}
             activeOpacity={0.8}
           >
-            <View style={styles.iconContainer}>
-              <Feather name={action.icon} size={24} color={theme.colors.primary} />
+            <View
+              style={[
+                styles.iconContainer,
+                {
+                  backgroundColor: activeTheme.colors.cardLight,
+                  borderColor: activeTheme.colors.border,
+                  borderWidth: 1.5,
+                  borderRadius: 24,
+                },
+              ]}
+            >
+              <Feather name={action.icon} size={24} color={activeTheme.colors.primary} />
             </View>
-            <Text style={styles.actionLabel}>{action.label}</Text>
+            <Text style={[styles.actionLabel, { color: activeTheme.colors.textPrimary }]}>{t[action.labelKey]}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -58,18 +81,15 @@ const styles = StyleSheet.create({
     width: 100,
     alignItems: 'center',
     marginRight: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
   },
   iconContainer: {
     width: 72,
     height: 72,
-    borderRadius: 24,
-    backgroundColor: theme.colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: theme.spacing.md,
-    borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    ...theme.shadow.card,
   },
   actionLabel: {
     fontFamily: theme.typography.semibold,

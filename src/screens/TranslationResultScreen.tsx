@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { translateText } from '../services/translate';
 import { addToSaved, isSavedItem } from '../services/historyStorage';
 import { Toast } from '../components/Toast';
@@ -21,6 +22,8 @@ type TranslationResultScreenProps = {
     width: number;
     height: number;
   };
+  capturedImageUri?: string;
+  capturedImageBase64?: string;
 };
 
 const LANGUAGES = [
@@ -39,7 +42,10 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
   translatedText,
   initialLanguage = 'en',
   captureLocation,
+  capturedImageUri,
+  capturedImageBase64,
 }) => {
+  const { theme: activeTheme } = useTheme();
   const [currentLanguage, setCurrentLanguage] = useState<LangCode>(initialLanguage);
   const [currentTranslation, setCurrentTranslation] = useState<string>(
     translatedText ?? ''
@@ -92,25 +98,29 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: activeTheme.colors.border }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: activeTheme.colors.backgroundLight }]}
           onPress={() => onNavigate('/scan-preview')}
         >
-          <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
+          <Feather name="arrow-left" size={24} color={activeTheme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Translation</Text>
+        <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>Translation</Text>
         <TouchableOpacity
-          style={[styles.saveButton, saved && styles.saveButtonActive]}
+          style={[
+            styles.saveButton,
+            { backgroundColor: activeTheme.colors.backgroundLight, borderColor: activeTheme.colors.border },
+            saved && { backgroundColor: activeTheme.colors.primary, borderColor: activeTheme.colors.primary },
+          ]}
           onPress={handleSave}
           disabled={isSaving || saved}
         >
           <Feather
             name="bookmark"
             size={20}
-            color={saved ? '#FFFFFF' : theme.colors.primary}
+            color={saved ? '#FFFFFF' : activeTheme.colors.primary}
           />
         </TouchableOpacity>
       </View>
@@ -120,17 +130,31 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Captured image */}
+        {(capturedImageUri || capturedImageBase64) && (
+          <View style={[styles.imageCard, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}>
+            <Text style={[styles.label, { color: activeTheme.colors.textSecondary }]}>Captured image</Text>
+            <Image
+              source={{
+                uri: capturedImageUri || (capturedImageBase64 ? `data:image/jpeg;base64,${capturedImageBase64}` : undefined),
+              }}
+              style={styles.capturedImage}
+              resizeMode="cover"
+            />
+          </View>
+        )}
+
         {/* Original text card */}
-        <View style={styles.card}>
-          <Text style={styles.label}>Original</Text>
-          <Text style={styles.originalText}>
+        <View style={[styles.card, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}>
+          <Text style={[styles.label, { color: activeTheme.colors.textSecondary }]}>Original</Text>
+          <Text style={[styles.originalText, { color: activeTheme.colors.textPrimary }]}>
             {originalText || 'Detected text will appear here'}
           </Text>
         </View>
 
         {/* Translated text card */}
-        <View style={styles.card}>
-          <Text style={styles.label}>Translated</Text>
+        <View style={[styles.card, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}>
+          <Text style={[styles.label, { color: activeTheme.colors.textSecondary }]}>Translated</Text>
 
           <ScrollView
             horizontal
@@ -142,27 +166,32 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
               return (
                 <TouchableOpacity
                   key={code}
-                  style={[styles.languageChip, selected && styles.languageChipSelected]}
+                  style={[
+                    styles.languageChip,
+                    { backgroundColor: activeTheme.colors.backgroundLight, borderColor: activeTheme.colors.border },
+                    selected && { backgroundColor: activeTheme.colors.primary + '20', borderColor: activeTheme.colors.primary },
+                  ]}
                   onPress={() => handleChangeLanguage(code)}
                   disabled={isTranslating || !originalText}
                 >
                   <Text
                     style={[
                       styles.languageChipText,
-                      selected && styles.languageChipTextSelected,
+                      { color: activeTheme.colors.textPrimary },
+                      selected && { color: activeTheme.colors.primary },
                     ]}
                   >
                     {label}
                   </Text>
                   {selected && (
-                    <Text style={styles.languageChipName}> · {name}</Text>
+                    <Text style={[styles.languageChipName, { color: activeTheme.colors.primary }]}> · {name}</Text>
                   )}
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
 
-          <Text style={styles.translatedText}>
+          <Text style={[styles.translatedText, { color: activeTheme.colors.textPrimary }]}>
             {isTranslating
               ? 'Translating…'
               : currentTranslation || translatedText || 'Translation will appear here'}
@@ -172,8 +201,8 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
         {/* Location row */}
         {captureLocation && (
           <View style={styles.locationRow}>
-            <Feather name="map-pin" size={14} color={theme.colors.muted} />
-            <Text style={styles.locationText}>
+            <Feather name="map-pin" size={14} color={activeTheme.colors.muted} />
+            <Text style={[styles.locationText, { color: activeTheme.colors.textSecondary }]}>
               Captured at {captureLocation.lat.toFixed(4)}, {captureLocation.lng.toFixed(4)}
             </Text>
           </View>
@@ -182,15 +211,15 @@ export const TranslationResultScreen: React.FC<TranslationResultScreenProps> = (
         {/* Action buttons */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
-            style={styles.secondaryButton}
+            style={[styles.secondaryButton, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}
             onPress={() => onNavigate('/scan')}
           >
-            <Feather name="aperture" size={18} color={theme.colors.textPrimary} />
-            <Text style={styles.secondaryButtonText}>Scan again</Text>
+            <Feather name="aperture" size={18} color={activeTheme.colors.textPrimary} />
+            <Text style={[styles.secondaryButtonText, { color: activeTheme.colors.textPrimary }]}>Scan again</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.primaryButton}
+            style={[styles.primaryButton, { backgroundColor: activeTheme.colors.primary }]}
             onPress={() =>
               onNavigate('/poi-list', { pois: [], location: captureLocation })
             }
@@ -252,6 +281,17 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
     paddingBottom: theme.spacing.xl,
+  },
+  imageCard: {
+    borderRadius: theme.shapes.cardRadius,
+    borderWidth: 1,
+    overflow: 'hidden',
+    padding: theme.spacing.md,
+  },
+  capturedImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: theme.shapes.inputRadius,
   },
   card: {
     borderRadius: theme.shapes.cardRadius,

@@ -1,24 +1,28 @@
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export function ThemeSwitch({ isDark = false, onToggle }) {
+  const { t } = useLanguage();
+  const { theme: activeTheme } = useTheme();
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Feather name="moon" size={20} color={theme.colors.primary} />
-        <Text style={styles.title}>Theme</Text>
+        <Feather name="moon" size={20} color={activeTheme.colors.primary} />
+        <Text style={[styles.title, { color: activeTheme.colors.textPrimary }]}>{t.theme}</Text>
       </View>
-      <View style={styles.content}>
+      <View style={[styles.content, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}>
         <View style={styles.textContainer}>
-          <Text style={styles.description}>
-            {isDark ? 'Dark Mode' : 'Light Mode'}
+          <Text style={[styles.description, { color: activeTheme.colors.textSecondary }]}>
+            {isDark ? t.darkMode : t.lightMode}
           </Text>
         </View>
         <Switch
           value={isDark}
           onValueChange={onToggle}
-          trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+          trackColor={{ false: activeTheme.colors.border, true: activeTheme.colors.primary }}
           thumbColor="#fff"
         />
       </View>

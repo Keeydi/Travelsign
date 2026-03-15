@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   getHistory,
   formatHistoryItemTimestamp,
@@ -22,6 +24,8 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
 }
 
 export function RecentActivity({ onNavigate }: RecentActivityProps) {
+  const { t } = useLanguage();
+  const { theme: activeTheme } = useTheme();
   const [items, setItems] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
@@ -43,17 +47,17 @@ export function RecentActivity({ onNavigate }: RecentActivityProps) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Recent Activity</Text>
+        <Text style={[styles.title, { color: activeTheme.colors.textPrimary }]}>{t.recentActivity}</Text>
         <TouchableOpacity onPress={handleSeeAll}>
-          <Text style={styles.seeAll}>See All</Text>
+          <Text style={[styles.seeAll, { color: activeTheme.colors.primary }]}>{t.seeAll}</Text>
         </TouchableOpacity>
       </View>
 
       {items.length === 0 ? (
-        <View style={styles.emptyCard}>
-          <Feather name="clock" size={22} color={theme.colors.muted} />
-          <Text style={styles.emptyText}>No recent activity yet</Text>
-          <Text style={styles.emptySubText}>Scan a sign to get started</Text>
+        <View style={[styles.emptyCard, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}>
+          <Feather name="clock" size={22} color={activeTheme.colors.muted} />
+          <Text style={[styles.emptyText, { color: activeTheme.colors.textPrimary }]}>{t.noRecentActivity}</Text>
+          <Text style={[styles.emptySubText, { color: activeTheme.colors.textSecondary }]}>{t.scanToGetStarted}</Text>
         </View>
       ) : (
         <ScrollView
@@ -64,21 +68,21 @@ export function RecentActivity({ onNavigate }: RecentActivityProps) {
           {items.map((item) => (
             <TouchableOpacity
               key={item.id}
-              style={styles.activityCard}
+              style={[styles.activityCard, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}
               activeOpacity={0.8}
               onPress={() => handlePress(item)}
             >
-              <View style={styles.iconContainer}>
-                <Feather name="globe" size={18} color={theme.colors.primary} />
+              <View style={[styles.iconContainer, { borderColor: activeTheme.colors.primary + '30' }]}>
+                <Feather name="globe" size={18} color={activeTheme.colors.primary} />
               </View>
               <View style={styles.content}>
-                <Text style={styles.activityTitle} numberOfLines={1}>
+                <Text style={[styles.activityTitle, { color: activeTheme.colors.textPrimary }]} numberOfLines={1}>
                   {item.translatedText || '—'}
                 </Text>
-                <Text style={styles.activityOriginal} numberOfLines={1}>
+                <Text style={[styles.activityOriginal, { color: activeTheme.colors.textSecondary }]} numberOfLines={1}>
                   {item.originalText || '—'}
                 </Text>
-                <Text style={styles.activityTime}>
+                <Text style={[styles.activityTime, { color: activeTheme.colors.muted }]}>
                   {formatHistoryItemTimestamp(item)}
                 </Text>
               </View>

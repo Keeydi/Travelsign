@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 type POI = {
   id: string;
@@ -74,23 +75,24 @@ export const POIDetailsScreen: React.FC<POIDetailsScreenProps> = ({
   onNavigate,
   poi,
 }) => {
+  const { theme: activeTheme } = useTheme();
   if (!poi) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
         <View style={styles.header}>
           <TouchableOpacity
-            style={styles.backButton}
+            style={[styles.backButton, { backgroundColor: activeTheme.colors.backgroundLight }]}
             onPress={() => onNavigate('/poi-list')}
           >
-            <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
+            <Feather name="arrow-left" size={24} color={activeTheme.colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Place details</Text>
+          <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>Place details</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.errorContainer}>
-          <Feather name="alert-circle" size={40} color={theme.colors.muted} />
-          <Text style={styles.errorTitle}>Place not found</Text>
-          <Text style={styles.errorText}>No place data was provided.</Text>
+          <Feather name="alert-circle" size={40} color={activeTheme.colors.muted} />
+          <Text style={[styles.errorTitle, { color: activeTheme.colors.textPrimary }]}>Place not found</Text>
+          <Text style={[styles.errorText, { color: activeTheme.colors.textSecondary }]}>No place data was provided.</Text>
         </View>
       </View>
     );
@@ -99,7 +101,7 @@ export const POIDetailsScreen: React.FC<POIDetailsScreenProps> = ({
   const imageUrl = getPlaceholderImage(poi);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       {/* Header overlaid on image */}
       <View style={styles.imageWrapper}>
         <Image
@@ -151,28 +153,28 @@ export const POIDetailsScreen: React.FC<POIDetailsScreenProps> = ({
                 size={16}
                 color={
                   star <= Math.round(parseFloat(poi.rating!))
-                    ? theme.colors.accent
-                    : theme.colors.border
+                    ? activeTheme.colors.accent
+                    : activeTheme.colors.border
                 }
               />
             ))}
-            <Text style={styles.ratingValue}>{poi.rating}</Text>
+            <Text style={[styles.ratingValue, { color: activeTheme.colors.textPrimary }]}>{poi.rating}</Text>
           </View>
         )}
 
         {/* Address */}
         {poi.address && (
           <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Feather name="map" size={16} color={theme.colors.primary} />
+            <View style={[styles.infoIcon, { backgroundColor: activeTheme.colors.backgroundLight }]}>
+              <Feather name="map" size={16} color={activeTheme.colors.primary} />
             </View>
-            <Text style={styles.infoText}>{poi.address}</Text>
+            <Text style={[styles.infoText, { color: activeTheme.colors.textPrimary }]}>{poi.address}</Text>
           </View>
         )}
 
         {/* Overview */}
-        <Text style={styles.sectionTitle}>Overview</Text>
-        <Text style={styles.description}>
+        <Text style={[styles.sectionTitle, { color: activeTheme.colors.textPrimary }]}>Overview</Text>
+        <Text style={[styles.description, { color: activeTheme.colors.textSecondary }]}>
           {poi.description ||
             `${poi.name} is a ${poi.category?.toLowerCase() || 'notable'} destination worth visiting. ` +
             `Explore the local area to discover what makes this place unique. ` +
@@ -182,8 +184,8 @@ export const POIDetailsScreen: React.FC<POIDetailsScreenProps> = ({
         {/* Coordinates */}
         {typeof poi.lat === 'number' && typeof poi.lng === 'number' && (
           <View style={styles.coordsRow}>
-            <Feather name="navigation" size={13} color={theme.colors.muted} />
-            <Text style={styles.coordsText}>
+            <Feather name="navigation" size={13} color={activeTheme.colors.muted} />
+            <Text style={[styles.coordsText, { color: activeTheme.colors.textSecondary }]}>
               {poi.lat.toFixed(5)}, {poi.lng.toFixed(5)}
             </Text>
           </View>
@@ -193,15 +195,15 @@ export const POIDetailsScreen: React.FC<POIDetailsScreenProps> = ({
       {/* Action buttons */}
       <View style={styles.actionsRow}>
         <TouchableOpacity
-          style={styles.secondaryButton}
+          style={[styles.secondaryButton, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}
           onPress={() => onNavigate('/translation-result')}
         >
-          <Feather name="message-circle" size={18} color={theme.colors.textPrimary} />
-          <Text style={styles.secondaryButtonText}>Translation</Text>
+          <Feather name="message-circle" size={18} color={activeTheme.colors.textPrimary} />
+          <Text style={[styles.secondaryButtonText, { color: activeTheme.colors.textPrimary }]}>Translation</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.primaryButton}
+          style={[styles.primaryButton, { backgroundColor: activeTheme.colors.primary }]}
           onPress={() => openMapsNavigation(poi)}
         >
           <Feather name="navigation" size={18} color="#FFFFFF" />

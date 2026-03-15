@@ -1,13 +1,17 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../theme';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export function Header({ userName = 'User' }) {
+  const { t } = useLanguage();
+  const { theme: activeTheme } = useTheme();
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.textContainer}>
-          <Text style={styles.greeting}>Welcome back,</Text>
-          <Text style={styles.name}>{userName} 👋</Text>
+          <Text style={[styles.greeting, { color: activeTheme.colors.textSecondary }]}>{t.welcomeBack}</Text>
+          <Text style={[styles.name, { color: activeTheme.colors.textPrimary }]}>{userName} 👋</Text>
         </View>
       </View>
     </View>

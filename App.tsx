@@ -13,6 +13,7 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { theme } from './src/theme';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
+import { LanguageProvider } from './src/contexts/LanguageContext';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { PermissionsScreen } from './src/screens/PermissionsScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
@@ -23,6 +24,7 @@ import { POIListScreen } from './src/screens/POIListScreen';
 import { POIDetailsScreen } from './src/screens/POIDetailsScreen';
 import { HistoryScreen } from './src/screens/HistoryScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { PrivacyPolicyScreen } from './src/screens/PrivacyPolicyScreen';
 
 function PlaceholderScreen({ title, onNavigate }) {
   return (
@@ -103,6 +105,8 @@ function AppContent() {
             translatedText={routeParams.translatedText}
             initialLanguage={routeParams.initialLanguage}
             captureLocation={routeParams.location}
+            capturedImageUri={routeParams.capturedImageUri}
+            capturedImageBase64={routeParams.capturedImageBase64}
           />
         );
       case '/poi-list':
@@ -122,6 +126,8 @@ function AppContent() {
         return <HistoryScreen onNavigate={handleNavigate} initialTab="saved" />;
       case '/settings':
         return <SettingsScreen onNavigate={handleNavigate} />;
+      case '/privacy-policy':
+        return <PrivacyPolicyScreen onNavigate={handleNavigate} />;
       case '/permissions':
         return <PermissionsScreen onNavigate={handleNavigate} />;
       case '/onboarding':
@@ -151,9 +157,11 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <ThemeProvider>
-          <SafeAreaView style={styles.loading}>
-            <ActivityIndicator color={theme.colors.primary} />
-          </SafeAreaView>
+          <LanguageProvider>
+            <SafeAreaView style={styles.loading}>
+              <ActivityIndicator color={theme.colors.primary} />
+            </SafeAreaView>
+          </LanguageProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     );
@@ -162,7 +170,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AppContent />
+        <LanguageProvider>
+          <AppContent />
+        </LanguageProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

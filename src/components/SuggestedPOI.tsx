@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 type POI = {
   id: string;
@@ -78,6 +80,8 @@ function uniqueById<T extends { id: string }>(items: T[]): T[] {
 }
 
 export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
+  const { t } = useLanguage();
+  const { theme: activeTheme } = useTheme();
   const raw = (pois && pois.length > 0) ? pois : SAMPLE_PLACES;
   const displayPois = uniqueById(raw);
 
@@ -88,9 +92,9 @@ export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Suggested Places</Text>
+        <Text style={[styles.title, { color: activeTheme.colors.textPrimary }]}>{t.suggestedPlaces}</Text>
         <TouchableOpacity onPress={() => onNavigate?.('/poi-list', { pois: displayPois })}>
-          <Text style={styles.seeAll}>See All</Text>
+          <Text style={[styles.seeAll, { color: activeTheme.colors.primary }]}>{t.seeAll}</Text>
         </TouchableOpacity>
       </View>
 
@@ -102,7 +106,7 @@ export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
         {displayPois.map((poi) => (
           <TouchableOpacity
             key={poi.id}
-            style={styles.poiCard}
+            style={[styles.poiCard, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}
             onPress={() => handlePOIClick(poi)}
             activeOpacity={0.85}
           >
@@ -119,20 +123,20 @@ export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
             </View>
 
             <View style={styles.content}>
-              <Text style={styles.poiName} numberOfLines={1}>
+              <Text style={[styles.poiName, { color: activeTheme.colors.textPrimary }]} numberOfLines={1}>
                 {poi.name}
               </Text>
-              <Text style={styles.poiDescription} numberOfLines={2}>
+              <Text style={[styles.poiDescription, { color: activeTheme.colors.textSecondary }]} numberOfLines={2}>
                 {poi.description}
               </Text>
               <View style={styles.footer}>
-                <View style={styles.ratingContainer}>
-                  <Feather name="star" size={13} color={theme.colors.accent} />
-                  <Text style={styles.rating}>{poi.rating}</Text>
+                <View style={[styles.ratingContainer, { backgroundColor: activeTheme.colors.cardLight }]}>
+                  <Feather name="star" size={13} color={activeTheme.colors.accent} />
+                  <Text style={[styles.rating, { color: activeTheme.colors.textPrimary }]}>{poi.rating}</Text>
                 </View>
                 <View style={styles.distanceContainer}>
-                  <Feather name="map-pin" size={12} color={theme.colors.textSecondary} />
-                  <Text style={styles.distance}>{poi.distance}</Text>
+                  <Feather name="map-pin" size={12} color={activeTheme.colors.textSecondary} />
+                  <Text style={[styles.distance, { color: activeTheme.colors.textSecondary }]}>{poi.distance}</Text>
                 </View>
               </View>
             </View>

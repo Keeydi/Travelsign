@@ -178,29 +178,29 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
     <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: activeTheme.colors.backgroundLight }]}
           onPress={() => onNavigate('/dashboard')}
         >
-          <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
+          <Feather name="arrow-left" size={24} color={activeTheme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Scan a sign</Text>
+        <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>Scan a sign</Text>
         <View style={styles.headerRight} />
       </View>
 
       <View style={styles.content}>
         {!permission || isRequesting ? (
-          <View style={styles.cameraPlaceholder}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.cameraText}>Requesting camera permission…</Text>
+          <View style={[styles.cameraPlaceholder, { backgroundColor: activeTheme.colors.backgroundLight, borderColor: activeTheme.colors.border }]}>
+            <ActivityIndicator size="large" color={activeTheme.colors.primary} />
+            <Text style={[styles.cameraText, { color: activeTheme.colors.textSecondary }]}>Requesting camera permission…</Text>
           </View>
         ) : !permission.granted ? (
-          <View style={styles.cameraPlaceholder}>
-            <Feather name="camera-off" size={40} color={theme.colors.danger} />
-            <Text style={styles.cameraText}>
+          <View style={[styles.cameraPlaceholder, { backgroundColor: activeTheme.colors.backgroundLight, borderColor: activeTheme.colors.border }]}>
+            <Feather name="camera-off" size={40} color={activeTheme.colors.danger} />
+            <Text style={[styles.cameraText, { color: activeTheme.colors.textSecondary }]}>
               Camera access is required to scan signs.
             </Text>
             <TouchableOpacity
-              style={styles.primaryButton}
+              style={[styles.primaryButton, { backgroundColor: activeTheme.colors.primary }]}
               onPress={handleRequestPermission}
               disabled={isRequesting}
             >
@@ -212,7 +212,7 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
               style={styles.settingsButton}
               onPress={() => Linking.openSettings()}
             >
-              <Text style={styles.settingsButtonText}>Open Settings</Text>
+              <Text style={[styles.settingsButtonText, { color: activeTheme.colors.primary }]}>Open Settings</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -261,7 +261,7 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
             </View>
 
             <TouchableOpacity
-              style={styles.primaryButton}
+              style={[styles.primaryButton, { backgroundColor: activeTheme.colors.primary }]}
               onPress={handleCapturePress}
               disabled={isCapturing}
             >

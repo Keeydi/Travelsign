@@ -68,6 +68,8 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
       onNavigate('/translation-result', {
         originalText: '',
         translatedText: '',
+        capturedImageUri: previewImageUri,
+        capturedImageBase64: previewImageBase64,
       });
       return;
     }
@@ -96,6 +98,8 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
         initialLanguage: targetLang,
         cropRect,
         location,
+        capturedImageUri: previewImageUri,
+        capturedImageBase64: previewImageBase64,
       });
     } catch (err: any) {
       console.error('OCR/translate failed', err);
@@ -105,6 +109,8 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
       onNavigate('/translation-result', {
         originalText: '',
         translatedText: '',
+        capturedImageUri: previewImageUri,
+        capturedImageBase64: previewImageBase64,
       });
     } finally {
       setIsProcessing(false);
@@ -115,19 +121,19 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
     <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: activeTheme.colors.backgroundLight }]}
           onPress={() => onNavigate('/scan')}
         >
-          <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
+          <Feather name="arrow-left" size={24} color={activeTheme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Preview</Text>
+        <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>Preview</Text>
         <View style={styles.headerRight} />
       </View>
 
       <View style={styles.content}>
         <TouchableWithoutFeedback onPress={handleSetCropCenter}>
           <View
-            style={styles.previewCard}
+            style={[styles.previewCard, { backgroundColor: activeTheme.colors.backgroundLight, borderColor: activeTheme.colors.border }]}
             onLayout={e => {
               const { width, height } = e.nativeEvent.layout;
               setCardSize({ width, height });
@@ -146,8 +152,8 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
                 />
                 ) : (
                 <>
-                  <Feather name="image" size={40} color={theme.colors.muted} />
-                  <Text style={styles.previewText}>
+                  <Feather name="image" size={40} color={activeTheme.colors.muted} />
+                  <Text style={[styles.previewText, { color: activeTheme.colors.textSecondary }]}>
                     Captured image preview will appear here
                   </Text>
                 </>
@@ -174,7 +180,7 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
         </TouchableWithoutFeedback>
 
         <TouchableOpacity
-          style={styles.primaryButton}
+          style={[styles.primaryButton, { backgroundColor: activeTheme.colors.primary }]}
           onPress={handleTranslate}
           disabled={isProcessing}
         >

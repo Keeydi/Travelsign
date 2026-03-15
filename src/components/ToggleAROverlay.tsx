@@ -1,22 +1,26 @@
 import { View, Text, StyleSheet, Switch } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export function ToggleAROverlay({ enabled = true, onToggle }) {
+  const { t } = useLanguage();
+  const { theme: activeTheme } = useTheme();
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Feather name="eye" size={20} color={theme.colors.primary} />
-        <Text style={styles.title}>Text Detection Overlay</Text>
+        <Feather name="eye" size={20} color={activeTheme.colors.primary} />
+        <Text style={[styles.title, { color: activeTheme.colors.textPrimary }]}>{t.textDetectionOverlay}</Text>
       </View>
-      <View style={styles.content}>
+      <View style={[styles.content, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}>
         <View style={styles.textContainer}>
-          <Text style={styles.description}>Show text detection boxes in camera view</Text>
+          <Text style={[styles.description, { color: activeTheme.colors.textSecondary }]}>{t.showTextDetectionBoxes}</Text>
         </View>
         <Switch
           value={enabled}
           onValueChange={onToggle}
-          trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+          trackColor={{ false: activeTheme.colors.border, true: activeTheme.colors.primary }}
           thumbColor="#fff"
         />
       </View>

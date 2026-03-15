@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator }
 import MapView, { Marker } from 'react-native-maps';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
 import { getCurrentLocation } from '../services/location';
 import { fetchNearbyPlaces } from '../services/nearby';
 
@@ -31,6 +32,7 @@ export const POIListScreen: React.FC<POIListScreenProps> = ({
   searchQuery,
   captureLocation,
 }) => {
+  const { theme: activeTheme } = useTheme();
   const [effectiveLocation, setEffectiveLocation] = useState(captureLocation ?? null);
   const [nearbyPois, setNearbyPois] = useState<POI[]>(pois && pois.length ? pois : []);
   const [loadingNearby, setLoadingNearby] = useState(false);
@@ -91,15 +93,15 @@ export const POIListScreen: React.FC<POIListScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: activeTheme.colors.backgroundLight }]}
           onPress={() => onNavigate('/translation-result')}
         >
-          <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
+          <Feather name="arrow-left" size={24} color={activeTheme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nearby places</Text>
+        <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>Nearby places</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -139,12 +141,12 @@ export const POIListScreen: React.FC<POIListScreenProps> = ({
                     coordinate={{ latitude: p.lat!, longitude: p.lng! }}
                     title={p.name}
                     description={p.category || 'Market'}
-                    pinColor={theme.colors.primary}
+                    pinColor={activeTheme.colors.primary}
                   />
                 ))}
             </MapView>
           </View>
-          <Text style={styles.locationHint}>
+          <Text style={[styles.locationHint, { color: activeTheme.colors.textSecondary }]}>
             Based on where you captured the sign:{" "}
             {effectiveLocation.lat.toFixed(4)}, {effectiveLocation.lng.toFixed(4)}
           </Text>
@@ -152,38 +154,38 @@ export const POIListScreen: React.FC<POIListScreenProps> = ({
       )}
 
       {searchQuery ? (
-        <Text style={styles.subtitle}>
+        <Text style={[styles.subtitle, { color: activeTheme.colors.textSecondary }]}>
           Results related to "{searchQuery}"
         </Text>
       ) : null}
 
       {loadingNearby ? (
         <View style={styles.loadingRow}>
-          <ActivityIndicator color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading nearby places…</Text>
+          <ActivityIndicator color={activeTheme.colors.primary} />
+          <Text style={[styles.loadingText, { color: activeTheme.colors.textSecondary }]}>Loading nearby places…</Text>
         </View>
       ) : (
         <FlatList
           data={data}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: activeTheme.colors.border }]} />}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.item}
               onPress={() => handlePressPOI(item)}
             >
               <View style={styles.itemIcon}>
-                <Feather name="map-pin" size={20} color={theme.colors.primary} />
+                <Feather name="map-pin" size={20} color={activeTheme.colors.primary} />
               </View>
               <View style={styles.itemTextContainer}>
-                <Text style={styles.itemTitle}>{item.name}</Text>
-                <Text style={styles.itemSubtitle}>
+                <Text style={[styles.itemTitle, { color: activeTheme.colors.textPrimary }]}>{item.name}</Text>
+                <Text style={[styles.itemSubtitle, { color: activeTheme.colors.textSecondary }]}>
                   {item.category || 'Point of interest'}
                   {item.distanceMeters ? ` • ${(item.distanceMeters / 1000).toFixed(1)} km` : ''}
                 </Text>
               </View>
-              <Feather name="chevron-right" size={20} color={theme.colors.muted} />
+              <Feather name="chevron-right" size={20} color={activeTheme.colors.muted} />
             </TouchableOpacity>
           )}
         />

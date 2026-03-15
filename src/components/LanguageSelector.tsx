@@ -1,26 +1,32 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
+import type { TranslationLanguageCode } from '../services/preferences';
 
-const languages = [
-  { code: 'en', name: 'English' },
-  { code: 'ja', name: 'Japanese' },
-  { code: 'zh', name: 'Chinese' },
-  { code: 'ko', name: 'Korean' },
-  { code: 'es', name: 'Spanish' },
+const LANGUAGE_KEYS: { code: TranslationLanguageCode; nameKey: 'langEnglish' | 'langJapanese' | 'langChinese' | 'langKorean' | 'langSpanish' }[] = [
+  { code: 'en', nameKey: 'langEnglish' },
+  { code: 'ja', nameKey: 'langJapanese' },
+  { code: 'zh', nameKey: 'langChinese' },
+  { code: 'ko', nameKey: 'langKorean' },
+  { code: 'es', nameKey: 'langSpanish' },
 ];
 
 export function LanguageSelector({ selectedLanguage = 'en', onSelect }) {
+  const { t } = useLanguage();
+  const { theme: activeTheme } = useTheme();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Translation Language</Text>
-      <View style={styles.languagesContainer}>
-        {languages.map((lang) => (
+      <Text style={[styles.title, { color: activeTheme.colors.textPrimary }]}>{t.translationLanguage}</Text>
+      <View style={[styles.languagesContainer, { backgroundColor: activeTheme.colors.card, borderColor: activeTheme.colors.border }]}>
+        {LANGUAGE_KEYS.map((lang) => (
           <TouchableOpacity
             key={lang.code}
             style={[
               styles.languageItem,
-              selectedLanguage === lang.code && styles.languageItemSelected,
+              { borderBottomColor: activeTheme.colors.border },
+              selectedLanguage === lang.code && { backgroundColor: activeTheme.colors.backgroundLight },
             ]}
             onPress={() => onSelect?.(lang.code)}
             activeOpacity={0.7}
@@ -28,13 +34,14 @@ export function LanguageSelector({ selectedLanguage = 'en', onSelect }) {
             <Text
               style={[
                 styles.languageText,
-                selectedLanguage === lang.code && styles.languageTextSelected,
+                { color: activeTheme.colors.textPrimary },
+                selectedLanguage === lang.code && { color: activeTheme.colors.primary },
               ]}
             >
-              {lang.name}
+              {t[lang.nameKey]}
             </Text>
             {selectedLanguage === lang.code && (
-              <Feather name="check" size={20} color={theme.colors.primary} />
+              <Feather name="check" size={20} color={activeTheme.colors.primary} />
             )}
           </TouchableOpacity>
         ))}

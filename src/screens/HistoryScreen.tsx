@@ -131,19 +131,19 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: activeTheme.colors.border }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: activeTheme.colors.backgroundLight }]}
           onPress={() => onNavigate('/dashboard')}
         >
-          <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
+          <Feather name="arrow-left" size={24} color={activeTheme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
+        <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>
           {activeTab === 'history' ? 'History' : 'Saved'}
         </Text>
         {data.length > 0 ? (
-          <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
-            <Text style={styles.clearButtonText}>Clear</Text>
+          <TouchableOpacity style={[styles.clearButton, { backgroundColor: activeTheme.colors.cardLight }]} onPress={handleClear}>
+            <Text style={[styles.clearButtonText, { color: activeTheme.colors.danger }]}>Clear</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.headerRight} />
@@ -151,55 +151,61 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       </View>
 
       {/* Tabs */}
-      <View style={styles.tabRow}>
+      <View style={[styles.tabRow, { borderBottomColor: activeTheme.colors.border }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'history' && styles.tabActive]}
+          style={[
+            styles.tab,
+            { backgroundColor: activeTheme.colors.backgroundLight },
+            activeTab === 'history' && { backgroundColor: activeTheme.colors.cardLight, borderWidth: 1, borderColor: activeTheme.colors.primary + '40' },
+          ]}
           onPress={() => setActiveTab('history')}
         >
           <Feather
             name="clock"
             size={15}
-            color={activeTab === 'history' ? theme.colors.primary : theme.colors.textSecondary}
+            color={activeTab === 'history' ? activeTheme.colors.primary : activeTheme.colors.textSecondary}
           />
           <Text
             style={[
               styles.tabLabel,
-              activeTab === 'history' && styles.tabLabelActive,
+              { color: activeTheme.colors.textSecondary },
+              activeTab === 'history' && { color: activeTheme.colors.primary },
             ]}
           >
             History
           </Text>
           {historyData.length > 0 && (
-            <View style={[styles.badge, activeTab === 'history' && styles.badgeActive]}>
-              <Text style={[styles.badgeText, activeTab === 'history' && styles.badgeTextActive]}>
-                {historyData.length}
-              </Text>
+            <View style={[styles.badge, { backgroundColor: activeTab === 'history' ? activeTheme.colors.primary : activeTheme.colors.muted }]}>
+              <Text style={[styles.badgeText, styles.badgeTextActive]}>{historyData.length}</Text>
             </View>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'saved' && styles.tabActive]}
+          style={[
+            styles.tab,
+            { backgroundColor: activeTheme.colors.backgroundLight },
+            activeTab === 'saved' && { backgroundColor: activeTheme.colors.cardLight, borderWidth: 1, borderColor: activeTheme.colors.primary + '40' },
+          ]}
           onPress={() => setActiveTab('saved')}
         >
           <Feather
             name="bookmark"
             size={15}
-            color={activeTab === 'saved' ? theme.colors.primary : theme.colors.textSecondary}
+            color={activeTab === 'saved' ? activeTheme.colors.primary : activeTheme.colors.textSecondary}
           />
           <Text
             style={[
               styles.tabLabel,
-              activeTab === 'saved' && styles.tabLabelActive,
+              { color: activeTheme.colors.textSecondary },
+              activeTab === 'saved' && { color: activeTheme.colors.primary },
             ]}
           >
             Saved
           </Text>
           {savedData.length > 0 && (
-            <View style={[styles.badge, activeTab === 'saved' && styles.badgeActive]}>
-              <Text style={[styles.badgeText, activeTab === 'saved' && styles.badgeTextActive]}>
-                {savedData.length}
-              </Text>
+            <View style={[styles.badge, { backgroundColor: activeTab === 'saved' ? activeTheme.colors.primary : activeTheme.colors.muted }]}>
+              <Text style={[styles.badgeText, styles.badgeTextActive]}>{savedData.length}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -207,28 +213,28 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading…</Text>
+          <ActivityIndicator size="large" color={activeTheme.colors.primary} />
+          <Text style={[styles.loadingText, { color: activeTheme.colors.textSecondary }]}>Loading…</Text>
         </View>
       ) : data.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <View style={styles.emptyIconWrap}>
-            <Feather name={emptyIcon} size={32} color={theme.colors.muted} />
+          <View style={[styles.emptyIconWrap, { backgroundColor: activeTheme.colors.backgroundLight, borderColor: activeTheme.colors.border }]}>
+            <Feather name={emptyIcon} size={32} color={activeTheme.colors.muted} />
           </View>
-          <Text style={styles.emptyTitle}>{emptyTitle}</Text>
-          <Text style={styles.emptyText}>{emptyText}</Text>
+          <Text style={[styles.emptyTitle, { color: activeTheme.colors.textPrimary }]}>{emptyTitle}</Text>
+          <Text style={[styles.emptyText, { color: activeTheme.colors.textSecondary }]}>{emptyText}</Text>
         </View>
       ) : (
         <FlatList
           data={data}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: activeTheme.colors.border }]} />}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[theme.colors.primary]}
+              colors={[activeTheme.colors.primary]}
             />
           }
           renderItem={({ item }) => (
@@ -243,22 +249,22 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
               onLongPress={() => handleRemoveItem(item)}
               activeOpacity={0.7}
             >
-              <View style={styles.iconContainer}>
+              <View style={[styles.iconContainer, { backgroundColor: activeTheme.colors.cardLight }]}>
                 <Feather
                   name={activeTab === 'history' ? 'clock' : 'bookmark'}
                   size={17}
-                  color={theme.colors.primary}
+                  color={activeTheme.colors.primary}
                 />
               </View>
               <View style={styles.textContainer}>
-                <Text style={styles.primaryText} numberOfLines={1}>
+                <Text style={[styles.primaryText, { color: activeTheme.colors.textPrimary }]} numberOfLines={1}>
                   {item.translatedText || '—'}
                 </Text>
-                <Text style={styles.secondaryText} numberOfLines={1}>
+                <Text style={[styles.secondaryText, { color: activeTheme.colors.textSecondary }]} numberOfLines={1}>
                   {item.originalText || '—'}
                 </Text>
               </View>
-              <Text style={styles.timeText}>
+              <Text style={[styles.timeText, { color: activeTheme.colors.muted }]}>
                 {formatHistoryItemTimestamp(item)}
               </Text>
             </TouchableOpacity>
@@ -267,7 +273,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       )}
 
       {data.length > 0 && (
-        <Text style={styles.hintText}>Long press an item to remove it</Text>
+        <Text style={[styles.hintText, { color: activeTheme.colors.muted }]}>Long press an item to remove it</Text>
       )}
     </View>
   );
