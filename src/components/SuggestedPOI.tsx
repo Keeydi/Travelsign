@@ -18,48 +18,48 @@ type POI = {
 const SAMPLE_PLACES: POI[] = [
   {
     id: '1',
-    name: 'Asakusa Temple',
-    category: 'Religious Site',
-    description: "One of Tokyo's most famous temples, featuring the iconic Kaminarimon gate and a lively shopping street.",
-    rating: '4.8',
-    distance: '0.4 km',
-    image: 'https://images.unsplash.com/photo-1570521462033-3015e76e7432?w=400&q=80',
+    name: 'Balanga City Plaza',
+    category: 'Landmark',
+    description: 'The heart of Balanga City with a fountain, gardens, and events. A great starting point for exploring the capital of Bataan.',
+    rating: '4.6',
+    distance: '—',
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&q=80',
   },
   {
     id: '2',
-    name: 'Central Market',
-    category: 'Market',
-    description: 'A bustling local market offering fresh produce, street food, and handcrafted souvenirs.',
-    rating: '4.5',
-    distance: '0.8 km',
-    image: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&q=80',
+    name: 'Balanga Cathedral',
+    category: 'Religious Site',
+    description: 'Diocesan Shrine of the Divine Mercy. A notable church and pilgrimage site in Bataan.',
+    rating: '4.7',
+    distance: '—',
+    image: 'https://images.unsplash.com/photo-1570521462033-3015e76e7432?w=400&q=80',
   },
   {
     id: '3',
-    name: 'Riverside Walk',
-    category: 'Park',
-    description: 'A scenic waterfront promenade perfect for a leisurely stroll, with great views of the city skyline.',
-    rating: '4.6',
-    distance: '1.2 km',
+    name: 'Bataan Capitol Complex',
+    category: 'Government',
+    description: 'Provincial capitol and park in Balanga. Green spaces and government buildings in the capital.',
+    rating: '4.4',
+    distance: '—',
     image: 'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=400&q=80',
   },
   {
     id: '4',
-    name: 'Old Town Square',
-    category: 'Historical',
-    description: 'A charming historic plaza surrounded by colorful colonial buildings, cafes, and local art galleries.',
-    rating: '4.7',
-    distance: '1.6 km',
-    image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&q=80',
+    name: 'Pilar-Balanga Road Scenic Stretch',
+    category: 'Viewpoint',
+    description: 'Scenic road between Pilar and Balanga with views of the countryside and Mount Samat in the distance.',
+    rating: '4.5',
+    distance: '—',
+    image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80',
   },
   {
     id: '5',
-    name: 'Skyline Viewpoint',
-    category: 'Viewpoint',
-    description: 'The best panoramic spot in the city offering breathtaking 360° views, especially at sunset.',
-    rating: '4.9',
-    distance: '2.1 km',
-    image: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&q=80',
+    name: 'Balanga Public Market',
+    category: 'Market',
+    description: 'Local market for fresh produce, snacks, and souvenirs. Experience everyday Balanga and Bataan flavors.',
+    rating: '4.3',
+    distance: '—',
+    image: 'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&q=80',
   },
 ];
 
@@ -68,8 +68,18 @@ type SuggestedPOIProps = {
   pois?: POI[];
 };
 
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
 export function SuggestedPOI({ onNavigate, pois }: SuggestedPOIProps) {
-  const displayPois = (pois && pois.length > 0) ? pois : SAMPLE_PLACES;
+  const raw = (pois && pois.length > 0) ? pois : SAMPLE_PLACES;
+  const displayPois = uniqueById(raw);
 
   const handlePOIClick = (poi: POI) => {
     onNavigate?.('/poi-details', { poi });

@@ -12,6 +12,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { Feather } from '@expo/vector-icons';
 import { theme } from './src/theme';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { PermissionsScreen } from './src/screens/PermissionsScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
@@ -70,30 +71,15 @@ const placeholderStyles = StyleSheet.create({
   },
 });
 
-export default function App() {
+function AppContent() {
+  const { theme: appTheme } = useTheme();
   const [route, setRoute] = useState('/onboarding');
   const [routeParams, setRouteParams] = useState({});
-  const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-  });
 
   const handleNavigate = (newRoute, params = {}) => {
     setRoute(newRoute);
     setRouteParams(params);
   };
-
-  if (!fontsLoaded) {
-    return (
-      <SafeAreaProvider>
-        <SafeAreaView style={styles.loading}>
-          <ActivityIndicator color={theme.colors.primary} />
-        </SafeAreaView>
-      </SafeAreaProvider>
-    );
-  }
 
   const renderScreen = () => {
     switch (route) {
@@ -145,12 +131,39 @@ export default function App() {
   };
 
   return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: appTheme.colors.background }]}>
+      <StatusBar style={appTheme.colors.textPrimary === '#F8FAFC' ? 'light' : 'dark'} />
+      {renderScreen()}
+      <ToastContainer />
+    </SafeAreaView>
+  );
+}
+
+export default function App() {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <SafeAreaView style={styles.loading}>
+            <ActivityIndicator color={theme.colors.primary} />
+          </SafeAreaView>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+  }
+
+  return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="dark" />
-        {renderScreen()}
-        <ToastContainer />
-      </SafeAreaView>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

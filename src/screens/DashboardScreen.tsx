@@ -4,10 +4,12 @@ import { QuickActions } from '../components/QuickActions';
 import { RecentActivity } from '../components/RecentActivity';
 import { SuggestedPOI } from '../components/SuggestedPOI';
 import { theme } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 export function DashboardScreen({ onNavigate }) {
+  const { theme: activeTheme } = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}

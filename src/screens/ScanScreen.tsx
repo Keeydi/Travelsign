@@ -4,12 +4,14 @@ import { Feather } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as FileSystem from 'expo-file-system';
 import { theme } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 type ScanScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
 };
 
 export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
+  const { theme: activeTheme } = useTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [isRequesting, setIsRequesting] = useState(false);
   const cameraRef = useRef<CameraView | null>(null);
@@ -173,7 +175,7 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({ onNavigate }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}

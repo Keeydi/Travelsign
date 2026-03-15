@@ -12,11 +12,23 @@ type RecentActivityProps = {
   onNavigate?: (route: string, params?: Record<string, any>) => void;
 };
 
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
 export function RecentActivity({ onNavigate }: RecentActivityProps) {
   const [items, setItems] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
-    getHistory().then((list) => setItems(list.slice(0, 5)));
+    getHistory().then((list) => {
+      const deduped = uniqueById(list);
+      setItems(deduped.slice(0, 5));
+    });
   }, []);
 
   const handleSeeAll = () => onNavigate?.('/history');

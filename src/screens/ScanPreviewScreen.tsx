@@ -16,6 +16,7 @@ import { translateText } from '../services/translate';
 import { getCurrentLocation } from '../services/location';
 import { addToHistory } from '../services/historyStorage';
 import { getTranslationLanguage } from '../services/preferences';
+import { useTheme } from '../contexts/ThemeContext';
 
 type ScanPreviewScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
@@ -28,6 +29,7 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
   previewImageUri,
   previewImageBase64,
 }) => {
+  const { theme: activeTheme } = useTheme();
   // cropRect values are relative (0–1) inside the preview card
   const [cropRect, setCropRect] = useState({
     x: 0.1,
@@ -110,7 +112,7 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -131,23 +133,29 @@ export const ScanPreviewScreen: React.FC<ScanPreviewScreenProps> = ({
               setCardSize({ width, height });
             }}
           >
-            {previewImageUri ? (
-              <Image
-                source={{ uri: previewImageUri }}
-                style={styles.previewImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <>
-                <Feather name="image" size={40} color={theme.colors.muted} />
-                <Text style={styles.previewText}>
-                  Captured image preview will appear here
-                </Text>
-              </>
-            )}
+            {(() => {
+              // Prefer URI; on some devices (e.g. Android) file URI may not load — use base64 data URI as fallback
+              const imageUri =
+                previewImageUri ||
+                (previewImageBase64 ? `data:image/jpeg;base64,${previewImageBase64}` : null);
+              return imageUri ? (
+                <Image
+                  source={{ uri: imageUri }}
+                  style={styles.previewImage}
+                  resizeMode="cover"
+                />
+                ) : (
+                <>
+                  <Feather name="image" size={40} color={theme.colors.muted} />
+                  <Text style={styles.previewText}>
+                    Captured image preview will appear here
+                  </Text>
+                </>
+              );
+            })()}
 
             {/* Tap-to-position crop box overlay */}
-            {previewImageUri && (
+            {(previewImageUri || previewImageBase64) && (
               <View
                 style={[
                   styles.cropBox,

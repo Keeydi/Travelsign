@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   getHistory,
   getSaved,
@@ -33,6 +34,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
   onNavigate,
   initialTab = 'history',
 }) => {
+  const { theme: activeTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [savedData, setSavedData] = useState<HistoryItem[]>([]);
@@ -41,11 +43,20 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
 
   const data = activeTab === 'history' ? historyData : savedData;
 
+  const uniqueById = useCallback(<T extends { id: string }>(items: T[]): T[] => {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, []);
+
   const loadData = useCallback(async () => {
     const [h, s] = await Promise.all([getHistory(), getSaved()]);
-    setHistoryData(h);
-    setSavedData(s);
-  }, []);
+    setHistoryData(uniqueById(h));
+    setSavedData(uniqueById(s));
+  }, [uniqueById]);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,7 +129,7 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({
       : 'Tap the bookmark button on a translation to save it here.';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity

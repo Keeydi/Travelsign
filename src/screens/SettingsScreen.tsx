@@ -15,6 +15,7 @@ import { ThemeSwitch } from '../components/ThemeSwitch';
 import { theme } from '../theme';
 import { Toast } from '../components/Toast';
 import { getTranslationLanguage, setTranslationLanguage, type TranslationLanguageCode } from '../services/preferences';
+import { useTheme } from '../contexts/ThemeContext';
 
 type SettingsScreenProps = {
   onNavigate: (route: string, params?: Record<string, any>) => void;
@@ -131,18 +132,24 @@ const sectionStyles = StyleSheet.create({
 });
 
 export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<TranslationLanguageCode>('en');
+  const { theme: activeTheme, isDark: isDarkMode, setDark: setThemePreference } = useTheme();
+  const [selectedLanguage, setSelectedLanguage] = useState<TranslationLanguageCode | null>(null);
   const [arOverlayEnabled, setArOverlayEnabled] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Load persisted language on mount and whenever user returns to this screen (no default until loaded)
   useEffect(() => {
-    getTranslationLanguage().then(setSelectedLanguage);
+    let cancelled = false;
+    getTranslationLanguage().then((lang) => {
+      if (!cancelled) setSelectedLanguage(lang);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const handleLanguageChange = (langCode: string) => {
     const code = langCode as TranslationLanguageCode;
     setSelectedLanguage(code);
     setTranslationLanguage(code).catch(() => {});
+    // Keep selection in sync with storage so next time we open Settings we read the same value
     Toast.show({
       type: 'success',
       text1: 'Language Updated',
@@ -155,7 +162,7 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
   };
 
   const handleThemeToggle = (isDark: boolean) => {
-    setIsDarkMode(isDark);
+    setThemePreference(isDark);
   };
 
   const handleOfflineMaps = () => {
@@ -173,15 +180,15 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: activeTheme.colors.backgroundLight }]}>
+      <View style={[styles.header, { backgroundColor: activeTheme.colors.background, borderBottomColor: activeTheme.colors.border }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => onNavigate?.('/dashboard')}
         >
-          <Feather name="arrow-left" size={24} color={theme.colors.textPrimary} />
+          <Feather name="arrow-left" size={24} color={activeTheme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: activeTheme.colors.textPrimary }]}>Settings</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -192,16 +199,22 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
       >
         {/* Translation */}
         <SectionHeader title="Translation" />
-        <View style={styles.settingsCard}>
-          <LanguageSelector
-            selectedLanguage={selectedLanguage}
-            onSelect={handleLanguageChange}
-          />
+        <View style={[styles.settingsCard, { backgroundColor: activeTheme.colors.background, borderColor: activeTheme.colors.border }]}>
+          {selectedLanguage === null ? (
+            <View style={styles.loadingRow}>
+              <Text style={styles.loadingText}>Loading language…</Text>
+            </View>
+          ) : (
+            <LanguageSelector
+              selectedLanguage={selectedLanguage}
+              onSelect={handleLanguageChange}
+            />
+          )}
         </View>
 
         {/* Display */}
         <SectionHeader title="Display" />
-        <View style={styles.settingsCard}>
+        <View style={[styles.settingsCard, { backgroundColor: activeTheme.colors.background, borderColor: activeTheme.colors.border }]}>
           <ToggleAROverlay
             enabled={arOverlayEnabled}
             onToggle={handleAROverlayToggle}
@@ -211,7 +224,7 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
 
         {/* Maps */}
         <SectionHeader title="Maps & Navigation" />
-        <View style={[styles.settingsCard, styles.rowsCard]}>
+        <View style={[styles.settingsCard, styles.rowsCard, { backgroundColor: activeTheme.colors.background, borderColor: activeTheme.colors.border }]}>
           <SettingsRow
             icon="download"
             label="Offline Maps"
@@ -222,7 +235,7 @@ export function SettingsScreen({ onNavigate }: SettingsScreenProps) {
 
         {/* About */}
         <SectionHeader title="About" />
-        <View style={[styles.settingsCard, styles.rowsCard]}>
+        <View style={[styles.settingsCard, styles.rowsCard, { backgroundColor: activeTheme.colors.background, borderColor: activeTheme.colors.border }]}>
           <SettingsRow
             icon="shield"
             label="Privacy Policy"
@@ -295,5 +308,13 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: theme.spacing.xl,
+  },
+  loadingRow: {
+    paddingVertical: theme.spacing.sm,
+  },
+  loadingText: {
+    fontFamily: theme.typography.regular,
+    fontSize: 14,
+    color: theme.colors.textSecondary,
   },
 });
